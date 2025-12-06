@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="uk">
+    <head>
+        <meta charset="UTF-8">
+        <title>Medic register</title>
+    </head>
+    <body>
+        <h1>Medic register</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Register</button>
+            <p><a href="{% url 'auth_medic' %}">Already have an account? Authorize</a></p>
+        </form>
+    </body>
+</html>

@@ -1,0 +1,24 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Medic authorization</title>
+    </head>
+    <body>
+        <div>
+            {% if messages %}
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+            {% endif %}
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <h1>Medic authorization</h1>
+            {{ form.as_p }}
+            <button type="submit">Authorization</button>
+            <p><a href="{% url 'register_medic' %}">Don't have an account? Sign up</a></p>
+        </form>
+    </body>
+</html>

@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Diabetes project</title>
+    </head>
+    <body>
+        <h1>Main page</h1>
+        <div>
+            {% if messages %}
+                {% for message in messages %}
+                    {{ message }}
+                {% endfor %}
+            {% endif %}
+        </div>
+        <a href="{% url 'auth_patient' %}"><button>Sign up (Patient)</button></a>
+        <a href="{% url 'auth_medic' %}"><button>Sign up (Medic)</button></a>
+    </body>
+</html>
