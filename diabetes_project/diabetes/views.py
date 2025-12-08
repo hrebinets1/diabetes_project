@@ -1,10 +1,20 @@
 from django.shortcuts import render
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from .forms import *
 from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
 # Create your views here.
 from django.contrib.auth.models import Group
+
+
+def logout_view(request):
+    if request.user.is_authenticated:
+        logout(request)
+    return redirect("/")
+
+def is_member(user, name):
+    return user.groups.filter(name=name).exists()
 
 def auth_medic(request):
     if request.method == "POST":
@@ -13,12 +23,13 @@ def auth_medic(request):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(request, username=username, password=password)
-            if user is not None:
+            if user is not None and is_member(user, 'Medic'):
                 login(request, user)
                 messages.success(request, "Correct information! Login...")
-                return redirect("/")
+                return redirect("/main_medic_page/")
             else:
                 messages.error(request, "Incorrect information! Try again...")
+                form = AuthMedicForm()
 
     else:
         form = AuthMedicForm()
@@ -43,9 +54,15 @@ def auth_patient(request):
     return render(request, "auth_patient.html")
 
 def main_page(request):
-
-    return render(request, "main_page.html")
+    context = {
+        'user': request.user,
+    }
+    return render(request, "main_page.html", context)
 
 def main_medic_page(request):
-
-    return render(request, "main_medic_page.html")
+    data = {
+        "username": request.user.username,
+    }
+    if not request.user.is_authenticated or not is_member(request.user, 'Medic'):
+        return redirect('/auth_medic')
+    return render(request, "main_medic_page.html", context=data)
