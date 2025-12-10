@@ -4,6 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <title>Diabetes project</title>
+        <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
     </head>
     <body>
         <h1>Main page</h1>
@@ -12,6 +13,7 @@
         <a href="{% url 'auth_medic' %}"><button>Sign up (Medic)</button></a>
         {% else %}
         <a href="{% url 'logout' %}"><button>Log out</button></a>
+
         {% endif %}
     </body>
 </html>
