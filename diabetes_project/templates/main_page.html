@@ -7,13 +7,19 @@
         <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
     </head>
     <body>
+        {% if messages %}
+        <div class="for-messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                    {{ message }}
+                </li>
+            {% endfor %}
+        </div>
+        {% endif %}
         <h1>Main page</h1>
         {% if not user.is_authenticated %}
-        <a href="{% url 'auth_patient' %}"><button>Sign up (Patient)</button></a>
-        <a href="{% url 'auth_medic' %}"><button>Sign up (Medic)</button></a>
-        {% else %}
-        <a href="{% url 'logout' %}"><button>Log out</button></a>
-
+        <a href="{% url 'auth_patient' %}" class="button">Sign up (Patient)</a>
+        <a href="{% url 'auth_medic' %}" class="button">Sign up (Medic)</a>
         {% endif %}
     </body>
 </html>

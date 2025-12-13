@@ -1,6 +1,8 @@
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 #creating forms
+
+CustomUser = get_user_model()
 
 class AuthMedicForm(forms.Form):
     username = forms.CharField(label='Enter name', max_length=25)
@@ -8,9 +10,8 @@ class AuthMedicForm(forms.Form):
 
 class RegisterMedicForm(forms.ModelForm):
     class Meta:
-        model = User
-        fields = ('username', 'email', 'password', 'first_name', 'last_name')
-
+        model = CustomUser
+        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'hospital')
 
     username = forms.CharField(label="Enter name", max_length=25)
     email = forms.EmailField(label='Enter email', max_length=50)

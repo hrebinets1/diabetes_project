@@ -5,6 +5,33 @@
     <title>Title</title>
 </head>
 <body>
+    <a href="{% url 'logout' %}"><button>Logout</button></a>
     <h1>Welcome, {{ user.username }}!</h1>
+    <h2>Ваша лікарня: {{ user.hospital }}</h2>
+    <h2>Ваша посада: {{ user.position }}</h2>
+
+    {% if patients %}
+    <h2>Ваші пацієнти: </h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Логін</th>
+                <th>Ім'я та прізвище</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for patient in patients %}
+            <tr>
+                <td>{{ patient.username }}</td>
+                <td>{{ patient.first_name }} {{ patient.last_name }}</td>
+                <td>{{ patient.email }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>На даний момент за Вами не закріплено пацієнтів.</p>
+    {% endif %}
 </body>
 </html>

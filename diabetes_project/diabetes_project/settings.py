@@ -28,6 +28,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', 'diabetesproject']
 
+AUTH_USER_MODEL = 'diabetes.CustomUser'
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')

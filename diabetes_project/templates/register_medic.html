@@ -4,9 +4,17 @@
     <head>
         <meta charset="UTF-8">
         <title>Medic register</title>
+        <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
     </head>
     <body>
         <h1>Medic register</h1>
+        {% if messages %}
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                    {{ message }}
+                </li>
+            {% endfor %}
+        {% endif %}
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
