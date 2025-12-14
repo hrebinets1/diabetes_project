@@ -53,6 +53,29 @@ def auth_medic(request):
 
     return render(request, "auth_medic.html", { 'form': form })
 
+def auth_patient(request):
+    clear_messages(request)
+    if request.user.is_authenticated:
+        return redirect("/main_patient_page")
+
+    if request.method == "POST":
+        form = AuthPatientForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            user = authenticate(request, username=username, password=password)
+            if user is not None and is_patient(user):
+                login(request, user)
+                messages.success(request, "Success!")
+                return redirect("/main_patient_page/")
+            else:
+                form = AuthPatientForm()
+                messages.error(request, "Помилка авторизації!")
+    else:
+        form = AuthPatientForm()
+
+    return render(request, "auth_patient.html", {'form': form})
+
 def register_medic(request):
     clear_messages(request)
     if request.user.is_authenticated:
@@ -72,8 +95,27 @@ def register_medic(request):
         form = RegisterMedicForm()
     return render(request, "register_medic.html", { 'form': form } )
 
-def auth_patient(request):
-    return render(request, "auth_patient.html")
+def register_patient(request):
+    clear_messages(request)
+    if request.user.is_authenticated:
+        return redirect("/main_patient_page")
+
+    if request.method == "POST":
+        form = RegisterPatientForm(request.POST)
+        if form.is_valid():
+            new_user = form.save(commit=False)
+            new_user.set_password(form.cleaned_data['password'])
+            new_user.save()
+            patient_group = Group.objects.get(name='Patient')
+            new_user.groups.add(patient_group)
+            login(request, new_user)
+            messages.success(request, "Реєстрація успішна!")
+            return redirect("/main_patient_page")
+    else:
+        form = RegisterPatientForm()
+
+    return render(request, "register_patient.html", {'form': form})
+
 
 def main_page(request):
     clear_messages(request)
@@ -81,7 +123,7 @@ def main_page(request):
         if is_medic(request.user):
             return redirect('/main_medic_page')
         elif is_patient(request.user):
-            return redirect('/auth_patient')
+            return redirect('/main_patient_page')
     return render(request, "main_page.html")
 
 def main_medic_page(request):
@@ -96,3 +138,15 @@ def main_medic_page(request):
 
     return render(request, "main_medic_page.html", context=data)
 
+
+def main_patient_page(request):
+    clear_messages(request)
+    if not request.user.is_authenticated or not is_patient(request.user):
+        return redirect('/auth_patient')
+
+    data = {
+        "user": request.user,
+
+    }
+
+    return render(request, "main_patient_page.html", context=data)

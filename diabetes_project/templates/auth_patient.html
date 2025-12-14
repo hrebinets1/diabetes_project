@@ -10,7 +10,8 @@
         <form method="POST">
             {% csrf_token %}
             {{ form.as_p }}
-            <h1>Авторизація</h1>
+            <button type="submit">Авторизація</button>
+            <p><a href="{% url 'register_patient' %}">Ще немає акаунту? Зареєструйтесь</a></p>
         </form>
     </body>
 </html>
