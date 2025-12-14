@@ -1,0 +1,62 @@
+/* body style */
+body {
+    background-color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+a.button {
+  min-width: 150px;
+  background-color: #04AA6D;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+}
+
+/* django messages style */
+.for-messages {
+    background-color: #F0F0F0;
+    font-size: 14px;
+    padding: 10px;
+    border-radius: 4px;
+    max-width: 400px;
+    width: 90%;
+    margin-bottom: 20px;
+}
+
+.for-messages ul {
+    margin-bottom: 5px;
+    list-style-type: none;
+}
+
+.for-messages li {
+    color: #000000;
+    text-align: left;
+    margin-bottom: 5px;
+    list-style-type: none;
+}
+
+/* form styles */
+form {
+    max-width: 400px;
+    width: 90%;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* {{ form.as_p }} styles */
+form p {
+    text-align: left;
+    margin-bottom: 15px;
+    color: #000000;
+}

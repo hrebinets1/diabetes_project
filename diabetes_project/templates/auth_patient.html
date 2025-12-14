@@ -3,14 +3,14 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Authorization patient</title>
+        <title>Авторизація для пацієнтів</title>
         <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
     </head>
     <body>
         <form method="POST">
             {% csrf_token %}
             {{ form.as_p }}
-            <h1>Authorization patient</h1>
+            <h1>Авторизація</h1>
         </form>
     </body>
 </html>

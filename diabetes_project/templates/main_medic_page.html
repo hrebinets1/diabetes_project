@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Сторінка для медика</title>
 </head>
 <body>
-    <a href="{% url 'logout' %}"><button>Logout</button></a>
-    <h1>Welcome, {{ user.username }}!</h1>
+    <a href="{% url 'logout' %}"><button>Вийти з акаунту</button></a>
+    <h1>Вітаємо, {{ user.username }}!</h1>
     <h2>Ваша лікарня: {{ user.hospital }}</h2>
     <h2>Ваша посада: {{ user.position }}</h2>
 

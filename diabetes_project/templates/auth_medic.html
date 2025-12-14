@@ -3,7 +3,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Medic authorization</title>
+        <title>Авторизація для медиків</title>
         <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
     </head>
     <body>
@@ -19,10 +19,10 @@
 
         <form method="POST">
             {% csrf_token %}
-            <h1>Medic authorization</h1>
+            <h1>Авторизація для медиків</h1>
             {{ form.as_p }}
-            <button type="submit">Authorization</button>
-            <p><a href="{% url 'register_medic' %}">Don't have an account? Sign up</a></p>
+            <button type="submit">Авторизація</button>
+            <p><a href="{% url 'register_medic' %}">Ще немає акаунту? Зареєструйтесь</a></p>
         </form>
     </body>
 </html>

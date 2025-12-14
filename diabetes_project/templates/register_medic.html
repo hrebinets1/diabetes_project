@@ -3,11 +3,11 @@
 <html lang="uk">
     <head>
         <meta charset="UTF-8">
-        <title>Medic register</title>
+        <title>Реєстрація для медиків</title>
         <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
     </head>
     <body>
-        <h1>Medic register</h1>
+        <h1>Реєстрація для медиків</h1>
         {% if messages %}
             {% for message in messages %}
                 <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
@@ -18,8 +18,8 @@
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit">Register</button>
-            <p><a href="{% url 'auth_medic' %}">Already have an account? Authorize</a></p>
+            <button type="submit">Зареєструватись</button>
+            <p><a href="{% url 'auth_medic' %}">Вже маєте акаунт? Авторизуйтесь</a></p>
         </form>
     </body>
 </html>
