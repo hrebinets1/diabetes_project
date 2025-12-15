@@ -46,4 +46,24 @@ class RegisterPatientForm(forms.ModelForm):
     username = forms.CharField(label="Впишіть логін", max_length=25)
     email = forms.EmailField(label='Впишіть пошту', max_length=50)
     password = forms.CharField(label='Впишіть пароль', max_length=30, widget=forms.PasswordInput)
+    password_confirm = forms.CharField(label='Підтвердіть пароль', max_length=30, widget=forms.PasswordInput)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        password_confirm = cleaned_data.get('password_confirm')
+
+        if password and password_confirm and password != password_confirm:
+            raise forms.ValidationError("Паролі не співпадають!")
+
+        return cleaned_data
+
+    def clean_medic(self):
+        medic_username = self.cleaned_data.get('medic')
+        if medic_username:
+            try:
+                medic = CustomUser.objects.get(username=medic_username, groups__name='Medic')
+            except CustomUser.DoesNotExist:
+                raise forms.ValidationError("Лікар з таким username не знайдений!")
+        return medic_username
 

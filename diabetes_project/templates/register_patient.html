@@ -1,15 +1,30 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Patient register</title>
-
+    <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
 </head>
 <body>
+    <p><a href="{% url 'main_page' %}">На головну</a></p>
+    <h1>Реєстрація пацієнта</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Register</button>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Зареєструватися</button>
     </form>
+
+    <p>Вже зареєстровані? <a href="{% url 'auth_patient' %}">Увійти</a></p>
+
 </body>
 </html>
