@@ -16,11 +16,12 @@ class AuthPatientForm(forms.Form):
 class RegisterMedicForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'hospital')
+        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'hospital', 'position')
         labels = {
             'first_name': "Ваше ім'я",
             'last_name': "Ваше прізвище",
-            'hospital': "Ваша лікарня"
+            'hospital': "Ваша лікарня",
+            'position': "Ваша посада",
         }
 
     username = forms.CharField(label="Впишіть логін", max_length=25)

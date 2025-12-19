@@ -6,7 +6,7 @@
 </head>
 <body>
     <a href="{% url 'logout' %}"><button>Вийти з акаунту</button></a>
-    <h1>Вітаємо, {{ user.username }}!</h1>
+    <h1>Вітаємо, {{ user.first_name }} {{ user.last_name }}!</h1>
     <h2>Ваша лікарня: {{ user.hospital }}</h2>
     <h2>Ваша посада: {{ user.position }}</h2>
 
