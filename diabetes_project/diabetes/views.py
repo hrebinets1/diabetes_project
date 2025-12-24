@@ -86,9 +86,8 @@ def register_medic(request):
         if form.is_valid():
             new_user = form.save(commit=False)
             new_user.set_password(form.cleaned_data['password'])
+            new_user.role = 'medic'
             new_user.save()
-            medic_group = Group.objects.get(name='Medic')
-            new_user.groups.add(medic_group)
             login(request, new_user)
             return redirect("/main_medic_page")
     else:
@@ -130,7 +129,7 @@ def main_medic_page(request):
     if not request.user.is_authenticated or not is_medic(request.user):
         return redirect('/auth_medic')
 
-    patients = User.objects.filter(medic=request.user.username, groups__name="Patient")
+    patients = User.objects.filter(medic=request.user.username, role="patient")
     data = {
         "user": request.user,
         'patients': patients,
