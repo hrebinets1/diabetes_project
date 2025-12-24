@@ -37,12 +37,13 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
+    'diabetes_project.apps.MongoAdminConfig',
+    'diabetes_project.apps.MongoAuthConfig',
+    'diabetes_project.apps.MongoContentTypesConfig',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_mongodb_backend',
     'diabetes',
 ]
 
@@ -79,12 +80,13 @@ WSGI_APPLICATION = 'diabetes_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
+"""DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+"""
 
 
 # Password validation
@@ -125,4 +127,20 @@ USE_TZ = True
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+#MONGODB SETTINGS (template: https://github.com/mongodb-labs/django-mongodb-project/tree/6.0.x)
+#DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = 'django_mongodb_backend.fields.ObjectIdAutoField'
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django_mongodb_backend',
+        'NAME': 'mongodb_lab2',
+        'HOST': 'mongodb://localhost:27017/',
+    }
+}
+
+MIGRATION_MODULES = {
+    'admin': 'mongo_migrations.admin',
+    'auth': 'mongo_migrations.auth',
+    'contenttypes': 'mongo_migrations.contenttypes',
+}

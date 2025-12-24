@@ -23,10 +23,10 @@ def logout_view(request):
     return redirect("/")
 
 def is_medic(user):
-    return user.groups.filter(name='Medic').exists()
+    return getattr(user, 'role', None) == 'medic'
 
 def is_patient(user):
-    return user.groups.filter(name='Patient').exists()
+    return getattr(user, 'role', None) == 'patient'
 
 
 def auth_medic(request):

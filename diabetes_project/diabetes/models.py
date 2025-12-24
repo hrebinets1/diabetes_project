@@ -1,11 +1,12 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from django.db import models
+from django_mongodb_backend.fields import ObjectIdAutoField
 
 class CustomUser(AbstractUser):
-    hospital = models.CharField(max_length=50, null=True, blank=True)
-    position = models.CharField(max_length=50, null=True, blank=True)
-    diabetes = models.CharField(max_length=20, null=True, blank=True)
-    medic = models.CharField(max_length=30, null=True, blank=True)
-
-# Create your models here.
+    _id = ObjectIdAutoField(primary_key=True)
+    hospital = models.CharField(max_length=20, blank=True)
+    position = models.CharField(max_length=20, blank=True)
+    medic = models.CharField(max_length=20, blank=True)
+    diabetes = models.CharField(max_length=20, blank=True)
+    role = models.CharField(max_length=10, null=False,
+                            choices = [('medic', 'Medic'), ('patient', 'Patient')], default='medic')
