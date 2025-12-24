@@ -104,9 +104,8 @@ def register_patient(request):
         if form.is_valid():
             new_user = form.save(commit=False)
             new_user.set_password(form.cleaned_data['password'])
+            new_user.role = 'patient'
             new_user.save()
-            patient_group = Group.objects.get(name='Patient')
-            new_user.groups.add(patient_group)
             login(request, new_user)
             messages.success(request, "Реєстрація успішна!")
             return redirect("/main_patient_page")
