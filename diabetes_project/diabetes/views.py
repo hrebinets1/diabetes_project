@@ -4,9 +4,8 @@ from django.contrib import messages
 from django.contrib.messages import get_messages
 from .forms import *
 from django.shortcuts import redirect
-# Create your views here.
 from django.contrib.auth.models import Group
-
+from .analysis_medic import classification_method
 User = get_user_model()
 
 # щоб в html формі не виводилися повідомлення з інших форм
@@ -133,6 +132,7 @@ def main_medic_page(request):
     data = {
         "user": request.user,
         'patients': patients,
+        "classification": classification_method(patients_dataset=""),
     }
 
     return render(request, "main_medic_page.html", context=data)
