@@ -1,5 +1,8 @@
 from django import forms
 from django.contrib.auth import get_user_model
+
+from .models import GlucoStats
+
 #creating forms
 
 CustomUser = get_user_model()
@@ -69,3 +72,17 @@ class RegisterPatientForm(forms.ModelForm):
                 raise forms.ValidationError("Лікар з таким username не знайдений!")
         return medic_username
 
+class GlucoStatsForm(forms.ModelForm):
+    class Meta:
+        model = GlucoStats
+        fields = ['level', 'measurement_date', 'notes']
+        widgets = {
+            'measurement_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'level': forms.NumberInput(attrs={'step': '0.1', 'class': 'form-control', 'placeholder': 'mmol/L'}),
+            'notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control', 'placeholder': 'Наприклад: натще'}),
+        }
+        labels = {
+            'level': 'Рівень цукру (mmol/L)',
+            'measurement_date': 'Дата та час',
+            'notes': 'Коментар'
+        }

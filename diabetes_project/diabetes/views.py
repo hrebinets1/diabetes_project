@@ -142,10 +142,26 @@ def main_patient_page(request):
     clear_messages(request)
     if not request.user.is_authenticated or not is_patient(request.user):
         return redirect('/auth_patient')
+    if request.method == "POST":
+        form = GlucoStatsForm(request.POST)
+        if form.is_valid():
+            reading = form.save(commit=False)
+            reading.user = request.user
+            reading.source = 'manual'
+            reading.save()
+            messages.success(request, "Показник успішно додано!")
+            return redirect('/main_patient_page')
+        else:
+            messages.error(request, "Помилка при додаванні даних")
+    else:
+        form = GlucoStatsForm()
 
+        # історія вимірювань
+    stats = GlucoStats.objects.filter(user=request.user).order_by('-measurement_date')[:10]
     data = {
         "user": request.user,
-
+        "form": form,
+        "stats": stats
     }
 
     return render(request, "main_patient_page.html", context=data)

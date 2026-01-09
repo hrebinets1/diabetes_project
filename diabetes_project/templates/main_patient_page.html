@@ -11,6 +11,55 @@
     <h1>Вітаємо, {{ user.first_name }} {{ user.last_name }}!</h1>
     <h2>Ваша лікарня: {{ user.hospital }}</h2>
     <h2>Ваш лікар: {{ user.medic }}</h2>
+    <div class="dashboard-container">
+        <div class="input-section">
+            <h3>Додати новий показник</h3>
+            <form method="POST">
+                {% csrf_token %}
+
+                <p>
+                    {{ form.measurement_date.label_tag }}<br>
+                    {{ form.measurement_date }}
+                </p>
+                <p>
+                    {{ form.level.label_tag }}<br>
+                    {{ form.level }}
+                </p>
+                <p>
+                    {{ form.notes.label_tag }}<br>
+                    {{ form.notes }}
+                </p>
+
+                <button type="submit">Зберегти</button>
+            </form>
+        </div>
+
+        <div class="history-section">
+            <h3>Останні записи</h3>
+            {% if stats %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата/Час</th>
+                        <th>Рівень (mmol/L)</th>
+                        <th>Нотатки</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in stats %}
+                    <tr>
+                        <td>{{ stat.measurement_date|date:"d.m.Y H:i" }}</td>
+                        <td><strong>{{ stat.level }}</strong></td>
+                        <td>{{ stat.notes|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p>Записів поки немає.</p>
+            {% endif %}
+        </div>
+    </div>
 
 </body>
 </html>
