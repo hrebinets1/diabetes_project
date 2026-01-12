@@ -67,7 +67,7 @@ class RegisterPatientForm(forms.ModelForm):
         medic_username = self.cleaned_data.get('medic')
         if medic_username:
             try:
-                medic = CustomUser.objects.get(username=medic_username, groups__name='Medic')
+                medic = CustomUser.objects.get(username=medic_username, role='medic')
             except CustomUser.DoesNotExist:
                 raise forms.ValidationError("Лікар з таким username не знайдений!")
         return medic_username

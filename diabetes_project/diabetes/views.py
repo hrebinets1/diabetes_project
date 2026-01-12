@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib import messages
@@ -6,6 +7,10 @@ from .forms import *
 from django.shortcuts import redirect
 from django.contrib.auth.models import Group
 from .analysis_medic import classification_method
+from .utils import generate_cgm_data
+
+from django.core.serializers.json import DjangoJSONEncoder
+
 User = get_user_model()
 
 # щоб в html формі не виводилися повідомлення з інших форм
@@ -103,9 +108,9 @@ def register_patient(request):
         if form.is_valid():
             new_user = form.save(commit=False)
             new_user.set_password(form.cleaned_data['password'])
+            new_user.role = 'patient'
             new_user.save()
-            patient_group = Group.objects.get(name='Patient')
-            new_user.groups.add(patient_group)
+            generate_cgm_data(new_user, days=7)
             login(request, new_user)
             messages.success(request, "Реєстрація успішна!")
             return redirect("/main_patient_page")
@@ -157,11 +162,29 @@ def main_patient_page(request):
         form = GlucoStatsForm()
 
         # історія вимірювань
-    stats = GlucoStats.objects.filter(user=request.user).order_by('-measurement_date')[:10]
+    stats = (GlucoStats.objects.filter(user=request.user).order_by('-measurement_date')[:205])
+
+    chart_labels = []
+    chart_data = []
+    for r in stats:
+        chart_labels.append(r.measurement_date)
+
+        chart_data.append(float(r.level))
+
+    # Сереалізація дати для JS (щоб уникнути проблем з форматом)
+    chart_labels_json = json.dumps(chart_labels, cls=DjangoJSONEncoder)
+    chart_data_json = json.dumps(chart_data)
+
+    current_level = chart_data[0] if chart_data else 0
+
     data = {
         "user": request.user,
         "form": form,
-        "stats": stats
+        "stats": stats,
+        "current_level": current_level,
+        # Дані для графіків
+        "chart_labels": chart_labels_json,
+        "chart_data": chart_data_json,
     }
 
     return render(request, "main_patient_page.html", context=data)

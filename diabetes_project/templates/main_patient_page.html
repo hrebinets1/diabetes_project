@@ -5,7 +5,22 @@
     <meta charset="UTF-8">
     <title>Patient page</title>
     <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
+    <style>
+        .metrics-card {
+            background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px;
+            text-align: center; margin-bottom: 20px; width: 200px;
+        }
+        .chart-container {
+            width: 100%; height: 400px; margin-bottom: 30px;
+        }
+        .big-number { font-size: 2em; font-weight: bold; color: #2c3e50; }
+    </style>
+<!--    Для графіків-->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
+
 <body>
     <span>{{user.username}}</span><a href="{% url 'logout' %}"><button>Вийти з акаунту</button></a>
     <h1>Вітаємо, {{ user.first_name }} {{ user.last_name }}!</h1>
@@ -34,31 +49,70 @@
             </form>
         </div>
 
-        <div class="history-section">
-            <h3>Останні записи</h3>
-            {% if stats %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>Дата/Час</th>
-                        <th>Рівень (mmol/L)</th>
-                        <th>Нотатки</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for stat in stats %}
-                    <tr>
-                        <td>{{ stat.measurement_date|date:"d.m.Y H:i" }}</td>
-                        <td><strong>{{ stat.level }}</strong></td>
-                        <td>{{ stat.notes|default:"-" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-                <p>Записів поки немає.</p>
-            {% endif %}
-        </div>
+    <div class="metrics-card">
+        <h3>Поточний рівень</h3>
+        <div class="big-number">{{ current_level }}</div>
+        <span>mmol/L</span>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="glucoseChart"></canvas>
+    </div>
+
+    <script>
+
+        const dates = JSON.parse('{{ chart_labels|escapejs }}');
+        const levels = JSON.parse('{{ chart_data|escapejs }}');
+
+        const ctx = document.getElementById('glucoseChart').getContext('2d');
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(255, 100, 100, 0.5)'); // Високий
+        gradient.addColorStop(0.5, 'rgba(50, 200, 250, 0.5)'); // Норма
+        gradient.addColorStop(1, 'rgba(255, 200, 70, 0.5)'); // Низький
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Рівень глюкози (mmol/L)',
+                    data: levels,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            displayFormats: {
+                                day: 'dd.MM'
+                            }
+                        },
+                        title: { display: true, text: 'Час' }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        title: { display: true, text: 'mmol/L' },
+                        suggestedMin: 3,
+                        suggestedMax: 15
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    </script>
     </div>
 
 </body>
