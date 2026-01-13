@@ -3,13 +3,14 @@ from django.shortcuts import render
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib import messages
 from django.contrib.messages import get_messages
+from django.utils import timezone
+from datetime import timedelta
+from .analysis import analyze_glucose_data
 from .forms import *
 from django.shortcuts import redirect
-from django.contrib.auth.models import Group
 from .analysis_medic import classification_method
 from .utils import generate_cgm_data
 
-from django.core.serializers.json import DjangoJSONEncoder
 
 User = get_user_model()
 
@@ -110,7 +111,7 @@ def register_patient(request):
             new_user.set_password(form.cleaned_data['password'])
             new_user.role = 'patient'
             new_user.save()
-            generate_cgm_data(new_user, days=7)
+            generate_cgm_data(new_user, days=30)
             login(request, new_user)
             messages.success(request, "Реєстрація успішна!")
             return redirect("/main_patient_page")
@@ -161,30 +162,38 @@ def main_patient_page(request):
     else:
         form = GlucoStatsForm()
 
-        # історія вимірювань
-    stats = (GlucoStats.objects.filter(user=request.user).order_by('-measurement_date')[:205])
+        # період та історія вимірювань
+    period_key = request.GET.get('period', 'week')
+    periods_map = {'week': 7, 'month': 30, '3months': 90, 'year': 365}
+    days = periods_map.get(period_key, 7)
 
-    chart_labels = []
-    chart_data = []
-    for r in stats:
-        chart_labels.append(r.measurement_date)
+    start_date = timezone.now() - timedelta(days=days)
+    queryset = GlucoStats.objects.filter(
+        user=request.user,
+        measurement_date__gte=start_date
+    ).order_by('measurement_date')
 
-        chart_data.append(float(r.level))
+    last_record = GlucoStats.objects.filter(user=request.user).order_by('-measurement_date').first()
+    current_level = float(last_record.level) if last_record else 0
 
-    # Сереалізація дати для JS (щоб уникнути проблем з форматом)
-    chart_labels_json = json.dumps(chart_labels, cls=DjangoJSONEncoder)
-    chart_data_json = json.dumps(chart_data)
+    analysis = analyze_glucose_data(queryset, period_days=days)
 
-    current_level = chart_data[0] if chart_data else 0
+    chart_history_json = "[]"
+    stats_context = {}
 
-    data = {
+    if analysis:
+        stats_context = analysis['stats']
+        chart_history_json = json.dumps(analysis['history'])
+
+    context = {
         "user": request.user,
         "form": form,
-        "stats": stats,
         "current_level": current_level,
+        "period": period_key,
         # Дані для графіків
-        "chart_labels": chart_labels_json,
-        "chart_data": chart_data_json,
+        "history_data": chart_history_json,
+
+        **stats_context #розпаковка статитстики
     }
 
-    return render(request, "main_patient_page.html", context=data)
+    return render(request, "main_patient_page.html", context=context)

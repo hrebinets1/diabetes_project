@@ -4,7 +4,7 @@ from django.utils import timezone
 from .models import GlucoStats
 
 
-def generate_cgm_data(user, days=7):
+def generate_cgm_data(user, days=30):
 
     end_time = timezone.now()
     start_time = end_time - timedelta(days=days)
@@ -15,7 +15,7 @@ def generate_cgm_data(user, days=7):
     while current_time <= end_time:
 
         hour = current_time.hour
-        base_level = 5.5
+        base_level = 4.8
 
         # Імітація їжі
         # Сніданок (7-9), Обід (12-14), Вечеря (19-21)

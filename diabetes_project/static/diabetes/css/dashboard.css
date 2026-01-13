@@ -1,0 +1,91 @@
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 3fr; /* Ліва колонка менша, права ширша */
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+
+.stats-panel {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.metrics-card {
+    background: #FFFFFF;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    flex: 1;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.metrics-card h4 {
+    margin: 0 0 10px;
+    color: #7f8c8d;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.big-number {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #2c4e50;
+}
+
+/* Секція графіка */
+.chart-wrapper {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    min-height: 450px;
+}
+
+.chart-controls {
+    text-align: right;
+    margin-bottom: 15px;
+}
+
+.chart-controls a {
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid #3498db;
+    color: #3498db;
+    border-radius: 20px;
+    font-size: 0.9em;
+    margin-left: 5px;
+    transition: all 0.3s;
+}
+
+.chart-controls a.active,
+.chart-controls a:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+
+.input-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+
+.header-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}

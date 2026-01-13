@@ -1,88 +1,122 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Patient page</title>
+    <title>Patient Dashboard</title>
     <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
-    <style>
-        .metrics-card {
-            background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 8px;
-            text-align: center; margin-bottom: 20px; width: 200px;
-        }
-        .chart-container {
-            width: 100%; height: 400px; margin-bottom: 30px;
-        }
-        .big-number { font-size: 2em; font-weight: bold; color: #2c3e50; }
-    </style>
-<!--    Для графіків-->
+    <link rel="stylesheet" href="{% static 'diabetes/css/dashboard.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 
 <body>
-    <span>{{user.username}}</span><a href="{% url 'logout' %}"><button>Вийти з акаунту</button></a>
-    <h1>Вітаємо, {{ user.first_name }} {{ user.last_name }}!</h1>
-    <h2>Ваша лікарня: {{ user.hospital }}</h2>
-    <h2>Ваш лікар: {{ user.medic }}</h2>
-    <div class="dashboard-container">
-        <div class="input-section">
-            <h3>Додати новий показник</h3>
-            <form method="POST">
-                {% csrf_token %}
-
-                <p>
-                    {{ form.measurement_date.label_tag }}<br>
-                    {{ form.measurement_date }}
-                </p>
-                <p>
-                    {{ form.level.label_tag }}<br>
-                    {{ form.level }}
-                </p>
-                <p>
-                    {{ form.notes.label_tag }}<br>
-                    {{ form.notes }}
-                </p>
-
-                <button type="submit">Зберегти</button>
-            </form>
+    <div class="header-container">
+        <div>
+            <h1>Вітаємо, {{ user.first_name }}!</h1>
+            <small>Лікарня: {{ user.hospital }} | Лікар: {{ user.medic }}</small>
         </div>
-
-    <div class="metrics-card">
-        <h3>Поточний рівень</h3>
-        <div class="big-number">{{ current_level }}</div>
-        <span>mmol/L</span>
+        <div>
+            <span>{{user.username}}</span>
+            <a href="{% url 'logout' %}" class="button" style="padding: 10px 20px; min-width: auto;">Вийти</a>
+        </div>
     </div>
 
-    <div class="chart-container">
-        <canvas id="glucoseChart"></canvas>
+<!--    {% if messages %}-->
+<!--    <div class="header-container">-->
+<!--        <div class="for-messages">-->
+<!--            <ul>-->
+<!--                {% for message in messages %}-->
+<!--                <li>{{ message }}</li>-->
+<!--                {% endfor %}-->
+<!--            </ul>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    {% endif %}-->
+
+    <div class="dashboard-grid">
+
+        <div class="left-col">
+            <div class="metrics-card" style="margin-bottom: 20px;">
+                <h4>Поточний рівень</h4>
+                <div class="big-number" style="color: {% if current_level > 10 %}#e74c3c{% else %}#27ae60{% endif %}">
+                    {{ current_level }}
+                </div>
+                <small>mmol/L</small>
+            </div>
+
+            <div class="input-section">
+                <h3>Новий запис</h3>
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="button" style="width: 100%;">Зберегти</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <div class="stats-panel">
+                <div class="metrics-card">
+                    <h4>Середній</h4>
+                    <div class="big-number">{{ avg|default:"-" }}</div>
+                </div>
+                <div class="metrics-card">
+                    <h4>Мін</h4>
+                    <div class="big-number">{{ min|default:"-" }}</div>
+                </div>
+                <div class="metrics-card">
+                    <h4>Макс</h4>
+                    <div class="big-number">{{ max|default:"-" }}</div>
+                </div>
+                <div class="metrics-card">
+                    <h4>HbA1c (est)</h4>
+                    <div class="big-number">{{ hba1c|default:"-" }}%</div>
+                </div>
+            </div>
+
+            <div class="chart-wrapper">
+                <div class="chart-controls">
+                    <span>Період: </span>
+                    <a href="?period=week" class="{% if period == 'week' %}active{% endif %}">Тиждень</a>
+                    <a href="?period=month" class="{% if period == 'month' %}active{% endif %}">Місяць</a>
+                    <a href="?period=3months" class="{% if period == '3months' %}active{% endif %}">3 Місяці</a>
+                    <a href="?period=year" class="{% if period == 'year' %}active{% endif %}">Рік</a>
+                </div>
+                <div style="height: 400px; width: 100%;">
+                    <canvas id="glucoseChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-
-        const dates = JSON.parse('{{ chart_labels|escapejs }}');
-        const levels = JSON.parse('{{ chart_data|escapejs }}');
+        const historyData = JSON.parse('{{ history_data|default:"[]"|escapejs }}');
 
         const ctx = document.getElementById('glucoseChart').getContext('2d');
-
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(255, 100, 100, 0.5)'); // Високий
-        gradient.addColorStop(0.5, 'rgba(50, 200, 250, 0.5)'); // Норма
+        gradient.addColorStop(0.4, 'rgba(255, 100, 100, 0.5)'); // Високий
+        gradient.addColorStop(0.7, 'rgba(50, 200, 250, 0.5)'); // Норма
         gradient.addColorStop(1, 'rgba(255, 200, 70, 0.5)'); // Низький
 
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: dates,
                 datasets: [{
-                    label: 'Рівень глюкози (mmol/L)',
-                    data: levels,
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0
-                }]
+                        label: 'Історія (mmol/L)',
+                        data: historyData,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: historyData.length > 50 ? 0 : 3,
+                        parsing: {
+                            xAxisKey: 'x',
+                            yAxisKey: 'y'
+                        }
+                    },
+
+                ]
             },
             options: {
                 responsive: true,
@@ -91,16 +125,14 @@
                     x: {
                         type: 'time',
                         time: {
-                            unit: 'day',
-                            displayFormats: {
-                                day: 'dd.MM'
-                            }
+                            unit: '{{ period }}' === 'year' ? 'month' : 'day',
+                            displayFormats: { day: 'dd.MM', month: 'MMM yyyy', hour: 'HH:mm' },
+                            tooltipFormat: 'dd.MM.yyyy HH:mm'
                         },
                         title: { display: true, text: 'Час' }
                     },
                     y: {
                         beginAtZero: false,
-                        title: { display: true, text: 'mmol/L' },
                         suggestedMin: 3,
                         suggestedMax: 15
                     }
@@ -113,7 +145,5 @@
             }
         });
     </script>
-    </div>
-
 </body>
 </html>
