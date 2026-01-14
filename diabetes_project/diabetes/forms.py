@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 
-from .models import GlucoStats
+from .models import GlucoStats, MealEvent, MedicationEvent, ActivityEvent
 
 #creating forms
 
@@ -87,3 +87,33 @@ class GlucoStatsForm(forms.ModelForm):
             'measurement_date': 'Дата та час',
             'notes': 'Коментар'
         }
+
+class MealEventForm(forms.Form):
+    class Meta:
+        model = MealEvent
+        fields = ('note', 'carbs')
+        labels = {
+            'note':"Запис",
+            'carbs':"Кількість вуглеводів"
+        }
+
+class MedicationEventForm(forms.Form):
+    class Meta:
+        model = MedicationEvent
+        fields = ('note', 'medicine_name', 'dosage')
+        labels = {
+            'note': "Запис",
+            'medicine_name': "Медикамент",
+            'dosage': "Дозування"
+        }
+
+class ActivityEventForm(forms.Form):
+    class Meta:
+        model = ActivityEvent
+        fields = ('note', 'activity_type', 'duration_minutes')
+        labels = {
+            'note': "Запис",
+            'activity_type': "Активність",
+            'duration_minutes': "Тривалість"
+        }
+

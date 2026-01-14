@@ -164,7 +164,7 @@ def main_patient_page(request):
 
         # період та історія вимірювань
     period_key = request.GET.get('period', 'week')
-    periods_map = {'week': 7, 'month': 30, '3months': 90, 'year': 365}
+    periods_map = {'day': 1, 'week': 7, 'month': 30, '3months': 90, 'year': 365}
     days = periods_map.get(period_key, 7)
 
     start_date = timezone.now() - timedelta(days=days)
