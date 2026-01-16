@@ -38,10 +38,10 @@ def generate_cgm_data(user, days=30):
             level=final_level,
             measurement_date=current_time,
             source='auto',
-            notes='CGM Simulation'
+            context='normal'
         ))
 
         # крок вимірювання
-        current_time += timedelta(minutes=7)
+        current_time += timedelta(minutes=10)
 
     GlucoStats.objects.bulk_create(stats)

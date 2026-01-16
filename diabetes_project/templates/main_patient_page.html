@@ -47,12 +47,44 @@
             </div>
 
             <div class="input-section">
-                <h3>Новий запис</h3>
-                <form method="POST">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="button" style="width: 100%;">Зберегти</button>
-                </form>
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="openTab(event, 'tab-gluco')">Цукор</button>
+                    <button class="tab-btn" onclick="openTab(event, 'tab-meal')">Їжа</button>
+                    <button class="tab-btn" onclick="openTab(event, 'tab-meds')">Ліки</button>
+                    <button class="tab-btn" onclick="openTab(event, 'tab-act')">Спорт</button>
+                </div>
+
+                <div id="tab-gluco" class="tab-content active">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ gluco_form.as_p }}
+                        <button type="submit" name="submit_gluco" class="button" style="width: 100%;">Записати</button>
+                    </form>
+                </div>
+
+                <div id="tab-meal" class="tab-content">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ meal_form.as_p }}
+                        <button type="submit" name="submit_meal" class="button" style="width: 100%; background-color: #04AA6D;">Додати їжу</button>
+                    </form>
+                </div>
+
+                <div id="tab-meds" class="tab-content">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ meds_form.as_p }}
+                        <button type="submit" name="submit_meds" class="button" style="width: 100%; background-color: #e67e22;">Додати ліки</button>
+                    </form>
+                </div>
+
+                <div id="tab-act" class="tab-content">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ activity_form.as_p }}
+                        <button type="submit" name="submit_act" class="button" style="width: 100%; background-color: #3888db;">Додати спорт</button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -93,7 +125,24 @@
     </div>
 
     <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.className += " active";
+        }
+
         const historyData = JSON.parse('{{ history_data|default:"[]"|escapejs }}');
+        const eventsData = JSON.parse('{{ events_data|default:"[]"|escapejs }}');
 
         const ctx = document.getElementById('glucoseChart').getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -104,7 +153,8 @@
         new Chart(ctx, {
             type: 'line',
             data: {
-                datasets: [{
+                datasets: [
+                    {
                         label: 'Історія (mmol/L)',
                         data: historyData,
                         backgroundColor: gradient,
@@ -116,6 +166,26 @@
                             yAxisKey: 'y'
                         }
                     },
+                    {
+                        type: 'scatter',
+                        label: 'Події',
+                        data: eventsData,
+                        backgroundColor: (ctx) => {
+                            const val = ctx.raw?.title || '';
+                            if (val.includes('meal')) return '#27ae60';
+                            if (val.includes('med')) return '#e67e22';
+                            return '#8e44ad'; // Фіолетовий
+                        },
+                        pointStyle: (ctx) => {
+                            const val = ctx.raw?.title || '';
+                            if (val.includes('meal')) return 'rectRot'; // Ромб
+                            if (val.includes('med')) return 'triangle'; // Трикутник
+                            return 'circle';
+                        },
+                        pointRadius: 8,
+                        pointHoverRadius: 10,
+                        parsing: { xAxisKey: 'x', yAxisKey: 'y' }
+                    }
 
                 ]
             },
@@ -142,6 +212,24 @@
                     mode: 'nearest',
                     axis: 'x',
                     intersect: false
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.type === 'scatter') {
+                                    const raw = context.raw;
+                                    return [raw.desc];
+                                }
+                                return `Цукор: ${context.parsed.y} mmol/L`;
+                            }
+                        }
+                    },
+                    legend: {
+                        labels: {
+                            usePointStyle: true
+                        }
+                    }
                 }
             }
         });

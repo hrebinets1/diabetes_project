@@ -76,44 +76,67 @@ class RegisterPatientForm(forms.ModelForm):
 class GlucoStatsForm(forms.ModelForm):
     class Meta:
         model = GlucoStats
-        fields = ['level', 'measurement_date', 'notes']
+        fields = ['level', 'measurement_date', 'context']
         widgets = {
             'measurement_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'level': forms.NumberInput(attrs={'step': '0.1', 'class': 'form-control', 'placeholder': 'mmol/L'}),
-            'notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control', 'placeholder': 'Наприклад: натще'}),
+            'context': forms.Select(attrs={'class': 'form-select'}),
         }
         labels = {
             'level': 'Рівень цукру (mmol/L)',
             'measurement_date': 'Дата та час',
-            'notes': 'Коментар'
+            'context': 'Контекст заміру',
         }
 
-class MealEventForm(forms.Form):
+class MealEventForm(forms.ModelForm):
     class Meta:
         model = MealEvent
-        fields = ('note', 'carbs')
+        fields = ('timestamp', 'meal_type', 'carbs', 'note')
+        widgets = {
+            'timestamp': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'meal_type': forms.TextInput(attrs={'class': 'form-control'}),
+            'carbs': forms.NumberInput(attrs={'class': 'form-control'}),
+            'note': forms.TextInput(attrs={'class': 'form-control'}),
+        }
         labels = {
-            'note':"Запис",
-            'carbs':"Кількість вуглеводів"
+            'timestamp': "Час прийому",
+            'meal_type': "Тип прийому",
+            'carbs': "Кількість вуглеводів",
+            'note':"Запис"
+
         }
 
-class MedicationEventForm(forms.Form):
+class MedicationEventForm(forms.ModelForm):
     class Meta:
         model = MedicationEvent
-        fields = ('note', 'medicine_name', 'dosage')
+        fields = ('timestamp', 'medicine_name', 'dosage', 'note')
+        widgets = {
+            'timestamp': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'medicine_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'dosage': forms.TextInput(attrs={'class': 'form-control'}),
+            'note': forms.TextInput(attrs={'class': 'form-control'}),
+        }
         labels = {
-            'note': "Запис",
+            'timestamp': "Час прийому",
             'medicine_name': "Медикамент",
-            'dosage': "Дозування"
+            'dosage': "Дозування",
+            'note': "Запис"
         }
 
-class ActivityEventForm(forms.Form):
+class ActivityEventForm(forms.ModelForm):
     class Meta:
         model = ActivityEvent
-        fields = ('note', 'activity_type', 'duration_minutes')
+        fields = ('timestamp', 'activity_type', 'duration_minutes',  'note')
+        widgets = {
+            'timestamp': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'activity_type': forms.TextInput(attrs={'class': 'form-control'}),
+            'duration_minutes': forms.NumberInput(attrs={'class': 'form-control'}),
+            'note': forms.TextInput(attrs={'class': 'form-control'}),
+        }
         labels = {
-            'note': "Запис",
-            'activity_type': "Активність",
-            'duration_minutes': "Тривалість"
+            'timestamp': "Час активності",
+            'activity_type': "Вид активності",
+            'duration_minutes': "Тривалість (хв)",
+            'note': "Запис"
         }
 

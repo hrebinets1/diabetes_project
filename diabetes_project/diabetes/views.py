@@ -148,19 +148,55 @@ def main_patient_page(request):
     clear_messages(request)
     if not request.user.is_authenticated or not is_patient(request.user):
         return redirect('/auth_patient')
+
+    forms_dict = {
+        'gluco_form': GlucoStatsForm(prefix='gluco'),
+        'meal_form': MealEventForm(prefix='meal'),
+        'meds_form': MedicationEventForm(prefix='meds'),
+        'activity_form': ActivityEventForm(prefix='act'),
+    }
+
     if request.method == "POST":
-        form = GlucoStatsForm(request.POST)
-        if form.is_valid():
-            reading = form.save(commit=False)
-            reading.user = request.user
-            reading.source = 'manual'
-            reading.save()
-            messages.success(request, "Показник успішно додано!")
-            return redirect('/main_patient_page')
-        else:
-            messages.error(request, "Помилка при додаванні даних")
-    else:
-        form = GlucoStatsForm()
+        if 'submit_gluco' in request.POST:
+            form = GlucoStatsForm(request.POST)
+            if form.is_valid():
+                stat = form.save(commit=False)
+                stat.user = request.user
+                stat.source = 'manual'
+                stat.save()
+                messages.success(request, "Показник успішно додано!")
+                return redirect('/main_patient_page')
+            else:
+                forms_dict['gluco_form'] = form
+                messages.error(request, "Помилка при додаванні даних")
+
+        elif 'submit_meal' in request.POST:
+            form = MealEventForm(request.POST, prefix='meal')
+            if form.is_valid():
+                meal = form.save(commit=False)
+                meal.user = request.user
+                meal.save()
+                messages.success(request, "Прийом їжі записано!")
+                return redirect('/main_patient_page')
+
+        elif 'submit_meds' in request.POST:
+            form = MedicationEventForm(request.POST, prefix='meds')
+            if form.is_valid():
+                med = form.save(commit=False)
+                med.user = request.user
+                med.save()
+                messages.success(request, "Прийом ліків записано!")
+                return redirect('/main_patient_page')
+
+        elif 'submit_act' in request.POST:
+            form = ActivityEventForm(request.POST, prefix='act')
+            if form.is_valid():
+                act = form.save(commit=False)
+                act.user = request.user
+                act.save()
+                messages.success(request, "Активність записано!")
+                return redirect('/main_patient_page')
+
 
         # період та історія вимірювань
     period_key = request.GET.get('period', 'week')
@@ -176,23 +212,25 @@ def main_patient_page(request):
     last_record = GlucoStats.objects.filter(user=request.user).order_by('-measurement_date').first()
     current_level = float(last_record.level) if last_record else 0
 
-    analysis = analyze_glucose_data(queryset, period_days=days)
+    analysis = analyze_glucose_data(request.user, queryset, period_days=days)
 
     chart_history_json = "[]"
+    chart_events_json = "[]"
     stats_context = {}
 
     if analysis:
         stats_context = analysis['stats']
         chart_history_json = json.dumps(analysis['history'])
+        chart_events_json = json.dumps(analysis['events'])
 
     context = {
         "user": request.user,
-        "form": form,
         "current_level": current_level,
         "period": period_key,
         # Дані для графіків
         "history_data": chart_history_json,
-
+        "events_data": chart_events_json,
+        **forms_dict,
         **stats_context #розпаковка статитстики
     }
 

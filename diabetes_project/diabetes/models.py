@@ -47,6 +47,7 @@ class GlucoStats(models.Model):
         return f"{self.user.username} - {self.level} at {self.measurement_date}"
 
 class BaseEvent(models.Model):
+    _id = ObjectIdAutoField(primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
     note = models.TextField(blank=True)
@@ -56,6 +57,7 @@ class BaseEvent(models.Model):
         ordering = ['-timestamp']
 
 class MealEvent(BaseEvent):
+    meal_type = models.CharField(max_length=50)
     carbs = models.DecimalField(max_digits=5, decimal_places=1, validators=[MinValueValidator(15)])
 
 class MedicationEvent(BaseEvent):
