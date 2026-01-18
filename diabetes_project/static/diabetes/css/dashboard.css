@@ -157,3 +157,20 @@ p {
     margin-bottom: 5px;
 }
 
+.status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.status-message {
+    font-size: 0.8em;
+    color: gray;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+

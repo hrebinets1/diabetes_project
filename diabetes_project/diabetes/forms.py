@@ -52,7 +52,7 @@ class RegisterPatientForm(forms.ModelForm):
     email = forms.EmailField(label='Впишіть пошту', max_length=50)
     password = forms.CharField(label='Впишіть пароль', max_length=30, widget=forms.PasswordInput)
     password_confirm = forms.CharField(label='Підтвердіть пароль', max_length=30, widget=forms.PasswordInput)
-    diabetes = forms.ChoiceField(choices=[('1','перший'),('2','другий')])
+    diabetes = forms.ChoiceField(choices=[('type1','перший'),('type2','другий')])
 
     def clean(self):
         cleaned_data = super().clean()

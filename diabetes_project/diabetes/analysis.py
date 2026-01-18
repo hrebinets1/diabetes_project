@@ -1,9 +1,15 @@
+from datetime import timedelta
+
 import pandas as pd
 import numpy as np
+from django.utils import timezone
+
 from .models import MealEvent, MedicationEvent, ActivityEvent
 
 
 def analyze_glucose_data(user, queryset, period_days=30):
+
+    start_date = timezone.now() - timedelta(days=period_days)
 
     data = list(queryset.values('measurement_date', 'level'))
 
@@ -11,6 +17,7 @@ def analyze_glucose_data(user, queryset, period_days=30):
         return {
             'stats': {'avg': 0, 'min': 0, 'max': 0, 'hba1c': 0},
             'history': [],
+            'events':[]
             ####'forecast': []
         }
 
@@ -45,7 +52,7 @@ def analyze_glucose_data(user, queryset, period_days=30):
     ]
     events_data = []
 
-    meals = MealEvent.objects.filter(user=user).order_by('-timestamp')[:50]
+    meals = MealEvent.objects.filter(user=user, timestamp__gte=start_date).order_by('-timestamp')
     for m in meals:
         events_data.append({
             'x': m.timestamp.isoformat(),
@@ -54,7 +61,7 @@ def analyze_glucose_data(user, queryset, period_days=30):
             'desc': f"{m.carbs}г вугл. {m.note}"
         })
 
-    meds = MedicationEvent.objects.filter(user=user).order_by('-timestamp')[:50]
+    meds = MedicationEvent.objects.filter(user=user, timestamp__gte=start_date).order_by('-timestamp')
     for med in meds:
         events_data.append({
             'x': med.timestamp.isoformat(),
@@ -63,7 +70,7 @@ def analyze_glucose_data(user, queryset, period_days=30):
             'desc': f"Доза: {med.dosage}. {med.note}"
         })
 
-    acts = ActivityEvent.objects.filter(user=user).order_by('-timestamp')[:50]
+    acts = ActivityEvent.objects.filter(user=user, timestamp__gte=start_date).order_by('-timestamp')
     for act in acts:
         events_data.append({
             'x': act.timestamp.isoformat(),
@@ -78,3 +85,58 @@ def analyze_glucose_data(user, queryset, period_days=30):
         'events': events_data
         ######'forecast': []
     }
+
+
+def calculate_current_status(level, context, diabetes_type):
+
+    level = float(level)
+
+
+    hypo_threshold = 3.9
+
+    if context in ['post_meal', 'post_meds']:
+        target_max = 10.0
+        high_threshold = 13.0
+    else:
+        # Натще або в звичайному стані
+        target_max = 7.0
+        high_threshold = 10.0
+
+    # гіпоглікемія
+    if level < hypo_threshold:
+        return {
+            'status': 'Гіпоглікемія',
+            'color': 'Red',
+            'bg_color': '#fadbd8',
+            'message': 'Рівень небезпечно низький! Вживіть швидкі вуглеводи (сік, цукор).'
+        }
+
+    # Норма
+    elif hypo_threshold <= level <= target_max:
+        return {
+            'status': 'В нормі',
+            'color': 'Green',
+            'bg_color': '#d7fce7',
+            'message': 'Показники в межах цільового діапазону.'
+        }
+
+    # Підвищений
+    elif target_max < level <= high_threshold:
+        return {
+            'status': 'Підвищений',
+            'color': '#d15502',
+            'bg_color': '#ffd9bf',
+            'message': 'Рівень вище цільового. Слідкуйте за динамікою.'
+        }
+
+    # Гіперглікемія
+    else:
+
+        msg = 'Високий ризик! Перевірте кетони та скоригуйте інсулін.' if diabetes_type == 'type1' else 'Рівень значно перевищує норму. Зверніть увагу на дієту/ліки.'
+
+        return {
+            'status': 'Гіперглікемія',
+            'color': '#750202',  # Dark Red
+            'bg_color': '#e3b6b6',
+            'message': msg
+        }

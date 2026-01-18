@@ -1,7 +1,7 @@
 import random
 from datetime import timedelta
 from django.utils import timezone
-from .models import GlucoStats
+from .models import GlucoStats, ActivityEvent, MedicationEvent, MealEvent
 
 
 def generate_cgm_data(user, days=30):
@@ -11,37 +11,116 @@ def generate_cgm_data(user, days=30):
 
     stats = []
     current_time = start_time
+    meal_windows = {
+        'breakfast': (7, 9, 0.25),
+        'lunch': (12, 14, 0.25),
+        'dinner': (19, 21, 0.25)
+    }
+    base_level = 4.8
+    trend = 0
+
+    meals_eaten = {'breakfast': False, 'lunch': False, 'dinner': False}
+    last_day = current_time.day
 
     while current_time <= end_time:
 
+        if current_time.day != last_day:
+            meals_eaten = {'breakfast': False, 'lunch': False, 'dinner': False}
+            last_day = current_time.day
+
         hour = current_time.hour
-        base_level = 4.8
 
-        # Імітація їжі
-        # Сніданок (7-9), Обід (12-14), Вечеря (19-21)
-        meal_spike = 0
-        if 8 <= hour < 10:
-            meal_spike = random.uniform(1.5, 3.5)  # Сніданок
-        elif 13 <= hour < 15:
-            meal_spike = random.uniform(2.0, 4.0)  # Обід
-        elif 19 <= hour < 21:
-            meal_spike = random.uniform(1.5, 3.0)  # Вечеря
+        # Перевірка на прийом їжі
+        chosen_meal = None
+        for meal_name, (start_h, end_h, prob) in meal_windows.items():
+            if start_h <= hour < end_h and not meals_eaten[meal_name]:
+                # Шанс поїсти в цей проміжок часу
+                if random.random() < prob:
+                    chosen_meal = meal_name
+                    meals_eaten[meal_name] = True
+                    break
 
-        # Рандомізація
-        final_level = base_level + meal_spike + random.uniform(-0.2, 0.2)
+        # Якщо їмо
+        if chosen_meal:
+            carbs = random.randint(30, 100)
 
-        # Межі
-        final_level = round(max(3.0, min(17.0, final_level)), 1)
+            MealEvent.objects.create(
+                user=user,
+                timestamp=current_time,
+                meal_type=chosen_meal.capitalize(),
+                carbs=carbs,
+                note="autogen"
+            )
+
+            # Їжа штовхає цукор вгору
+            trend += (carbs / 40.0)
+
+        # Якщо цукор високий (> 10) і тренд росте або стабільний >> прийом інсуліну
+        if base_level > 10.0 and trend > -0.1:
+            dosage = random.randint(2, 6)
+            MedicationEvent.objects.create(
+                user=user,
+                timestamp=current_time,
+                medicine_name="Інсулін",
+                dosage=dosage,
+                note="Корекція"
+            )
+            # Інсулін штовхає тренд різко вниз
+            trend -= (dosage * 0.6)
+
+        # Активність
+        if 17 <= hour <= 20 and random.random() < 0.05 and trend > -0.2:
+            duration = 30
+            ActivityEvent.objects.create(
+                user=user,
+                timestamp=current_time,
+                activity_type="Прогулянка",
+                duration_minutes=duration,
+                note="Вечірня активність"
+            )
+            trend -= 0.5
+
+        # Якщо цукор високий, організм намагається його трохи знизити сам, і навпаки
+        target_level = 4.8
+        diff = base_level - target_level
+        trend -= diff * 0.03  #
+
+        # Затухання інерції
+        trend *= 0.85
+
+        noise = random.uniform(-0.03, 0.03)
+        base_level += trend + noise
+
+        if base_level > 14.0:
+            trend -= 0.2
+            base_level = min(base_level, 16.0)  # Абсолютний пік
+
+        if base_level < 3.0:
+            trend += 0.15
+            base_level = max(base_level, 2.0)  # Абсолютне дно
+
+        save_level = round(base_level, 2)
+
+        context = 'normal'
+        if trend > 0.3:
+            context = 'post_meal'
+        elif trend < -0.3:
+            context = 'post_meds'
 
         stats.append(GlucoStats(
             user=user,
-            level=final_level,
+            level=save_level,
             measurement_date=current_time,
             source='auto',
-            context='normal'
+            context=context
         ))
 
-        # крок вимірювання
-        current_time += timedelta(minutes=10)
+        if len(stats) >= 500:
+            GlucoStats.objects.bulk_create(stats)
+            stats = []
 
-    GlucoStats.objects.bulk_create(stats)
+        current_time += timedelta(minutes=15)
+
+        # Записуємо залишок
+    if stats:
+        GlucoStats.objects.bulk_create(stats)

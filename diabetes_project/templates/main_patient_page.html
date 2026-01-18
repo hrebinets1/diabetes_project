@@ -38,12 +38,21 @@
     <div class="dashboard-grid">
 
         <div class="left-col">
-            <div class="metrics-card" style="margin-bottom: 20px;">
+            <div class="metrics-card" style="margin-bottom: 20px; border-left: 5px solid {{ status_info.color }}">
                 <h4>Поточний рівень</h4>
-                <div class="big-number" style="color: {% if current_level > 10 %}#e74c3c{% else %}#27ae60{% endif %}">
+                <div class="big-number" style="color: {{ status_info.color }};">
                     {{ current_level }}
                 </div>
                 <small>mmol/L</small>
+                <div style="margin-top: 10px;">
+                    <span class="status-badge" style="background-color: {{ status_info.bg_color }}; color: {{ status_info.color }};">
+                        {{ status_info.status }}
+                    </span>
+
+                    <p class="status-message">
+                        {{ status_info.message }}
+                    </p>
+                </div>
             </div>
 
             <div class="input-section">
@@ -219,7 +228,8 @@
                             label: function(context) {
                                 if (context.dataset.type === 'scatter') {
                                     const raw = context.raw;
-                                    return [raw.desc];
+                                    let cleanTitle = raw.title.replace('meal ', '').replace('med ', '').replace('act ', '');
+                                    return [`${cleanTitle}`, raw.desc];
                                 }
                                 return `Цукор: ${context.parsed.y} mmol/L`;
                             }

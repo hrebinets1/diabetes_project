@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.utils import timezone
 from datetime import timedelta
-from .analysis import analyze_glucose_data
+from .analysis import analyze_glucose_data, calculate_current_status
 from .forms import *
 from django.shortcuts import redirect
 from .analysis_medic import classification_method
@@ -158,7 +158,7 @@ def main_patient_page(request):
 
     if request.method == "POST":
         if 'submit_gluco' in request.POST:
-            form = GlucoStatsForm(request.POST)
+            form = GlucoStatsForm(request.POST, prefix='gluco')
             if form.is_valid():
                 stat = form.save(commit=False)
                 stat.user = request.user
@@ -210,7 +210,21 @@ def main_patient_page(request):
     ).order_by('measurement_date')
 
     last_record = GlucoStats.objects.filter(user=request.user).order_by('-measurement_date').first()
-    current_level = float(last_record.level) if last_record else 0
+    current_level = 0
+    status_info = {
+        'status': 'Немає даних',
+        'color': '#7f8c8d',
+        'bg_color': '#ecf0f1',
+        'message': 'Додайте вимірювання'
+    }
+
+    if last_record:
+        current_level = float(last_record.level)
+        status_info = calculate_current_status(
+            level=current_level,
+            context=last_record.context,
+            diabetes_type=getattr(request.user, 'diabetes_type', 'type1')
+        )
 
     analysis = analyze_glucose_data(request.user, queryset, period_days=days)
 
@@ -226,6 +240,7 @@ def main_patient_page(request):
     context = {
         "user": request.user,
         "current_level": current_level,
+        "status_info": status_info,
         "period": period_key,
         # Дані для графіків
         "history_data": chart_history_json,
