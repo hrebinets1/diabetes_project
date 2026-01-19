@@ -19,6 +19,9 @@ def generate_cgm_data(user, days=30):
     base_level = 4.8
     trend = 0
 
+    meal_effect_timer = 0  # ітерацій (по 15 хв), поки діє ефект їжі
+    meds_effect_timer = 0  # ітерацій, поки діє ефект ліків
+
     meals_eaten = {'breakfast': False, 'lunch': False, 'dinner': False}
     last_day = current_time.day
 
@@ -54,6 +57,7 @@ def generate_cgm_data(user, days=30):
 
             # Їжа штовхає цукор вгору
             trend += (carbs / 40.0)
+            meal_effect_timer = 12
 
         # Якщо цукор високий (> 10) і тренд росте або стабільний >> прийом інсуліну
         if base_level > 10.0 and trend > -0.1:
@@ -66,10 +70,11 @@ def generate_cgm_data(user, days=30):
                 note="Корекція"
             )
             # Інсулін штовхає тренд різко вниз
-            trend -= (dosage * 0.6)
+            trend -= (dosage * 0.4)
+            meds_effect_timer = 16
 
         # Активність
-        if 17 <= hour <= 20 and random.random() < 0.05 and trend > -0.2:
+        if 18 <= hour <= 21 and random.random() < 0.05 and trend > -0.2:
             duration = 30
             ActivityEvent.objects.create(
                 user=user,
@@ -101,11 +106,15 @@ def generate_cgm_data(user, days=30):
 
         save_level = round(base_level, 2)
 
-        context = 'normal'
-        if trend > 0.3:
-            context = 'post_meal'
-        elif trend < -0.3:
+        if meds_effect_timer > 0:
             context = 'post_meds'
+        elif meal_effect_timer > 0:
+            context = 'post_meal'
+        else:
+            context = 'normal'
+
+        if meal_effect_timer > 0: meal_effect_timer -= 1
+        if meds_effect_timer > 0: meds_effect_timer -= 1
 
         stats.append(GlucoStats(
             user=user,

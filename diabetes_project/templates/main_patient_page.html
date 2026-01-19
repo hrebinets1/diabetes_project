@@ -112,23 +112,52 @@
                     <div class="big-number">{{ max|default:"-" }}</div>
                 </div>
                 <div class="metrics-card">
-                    <h4>HbA1c (est)</h4>
+                    <h4>HbA1c</h4>
                     <div class="big-number">{{ hba1c|default:"-" }}%</div>
                 </div>
             </div>
 
             <div class="chart-wrapper">
-                <div class="chart-controls">
-                    <span>Період: </span>
-                    <a href="?period=day" class="{% if period == 'day' %}active{% endif %}">День</a>
-                    <a href="?period=week" class="{% if period == 'week' %}active{% endif %}">Тиждень</a>
-                    <a href="?period=month" class="{% if period == 'month' %}active{% endif %}">Місяць</a>
-                    <a href="?period=3months" class="{% if period == '3months' %}active{% endif %}">3 Місяці</a>
-                    <a href="?period=year" class="{% if period == 'year' %}active{% endif %}">Рік</a>
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+
+                    <div class="chart-controls" style="text-align: left; margin-bottom: 0;">
+                        <span>Період: </span>
+                        <a href="?period=day" class="{% if period == 'day' %}active{% endif %}">День</a>
+                        <a href="?period=week" class="{% if period == 'week' %}active{% endif %}">Тиждень</a>
+                        <a href="?period=month" class="{% if period == 'month' %}active{% endif %}">Місяць</a>
+                        <a href="?period=3months" class="{% if period == '3months' %}active{% endif %}">3 Місяці</a>
+                        <a href="?period=year" class="{% if period == 'year' %}active{% endif %}">Рік</a>
+                    </div>
+
+                    <div class="chart-controls" style="margin-bottom: 0;">
+                        <span style="font-weight: bold; color: #3498db;">ПРОГНОЗ: </span>
+                        <select onchange="location = this.value;" style="padding: 6px 12px; border-radius: 20px; border: 1px solid #3498db; color: #3498db; background: white; outline: none; cursor: pointer;">
+                            <option value="#" {% if not show_forecast %}selected{% endif %} disabled>Оберіть період...</option>
+                            <option value="?period=forecast_month" {% if period == 'forecast_month' %}selected{% endif %}>На місяць</option>
+                            <option value="?period=forecast_3months" {% if period == 'forecast_3months' %}selected{% endif %}>На 3 місяці</option>
+                            <option value="?period=forecast_year" {% if period == 'forecast_year' %}selected{% endif %}>На рік</option>
+                        </select>
+                    </div>
                 </div>
                 <div style="height: 400px; width: 100%;">
                     <canvas id="glucoseChart"></canvas>
                 </div>
+                {% if show_forecast %}
+                <div class="recommendations-box">
+                    <h3 style="color: #2c3e50; margin-bottom: 10px;">Прогноз та рекомендації</h3>
+                    {% if recommendations %}
+                        <ul style="list-style: none; padding: 0;">
+                            {% for rec in recommendations %}
+                                <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: start;">
+                                    {{ rec }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p style="color: #7f8c8d;">Недостатньо даних для формування прогнозу. Продовжуйте вести щоденник.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -152,6 +181,7 @@
 
         const historyData = JSON.parse('{{ history_data|default:"[]"|escapejs }}');
         const eventsData = JSON.parse('{{ events_data|default:"[]"|escapejs }}');
+        const forecastData = JSON.parse('{{ forecast_data|default:"[]"|escapejs }}');
 
         const ctx = document.getElementById('glucoseChart').getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -174,6 +204,20 @@
                             xAxisKey: 'x',
                             yAxisKey: 'y'
                         }
+                    },
+                    {
+                        // Лінія ПРОГНОЗУ
+                        label: 'Прогноз (Тренд)',
+                        data: forecastData,
+                        borderColor: '#95a5a6',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.3,
+                        parsing: {
+                            xAxisKey: 'x',
+                            yAxisKey: 'y' }
                     },
                     {
                         type: 'scatter',

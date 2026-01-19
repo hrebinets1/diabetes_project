@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.messages import get_messages
 from django.utils import timezone
 from datetime import timedelta
-from .analysis import analyze_glucose_data, calculate_current_status
+from .analysis import analyze_glucose_data, calculate_current_status, get_forecast_and_recommendations
 from .forms import *
 from django.shortcuts import redirect
 from .analysis_medic import classification_method
@@ -200,8 +200,11 @@ def main_patient_page(request):
 
         # період та історія вимірювань
     period_key = request.GET.get('period', 'week')
-    periods_map = {'day': 1, 'week': 7, 'month': 30, '3months': 90, 'year': 365}
+    is_forecast_period = period_key.startswith('forecast_')
+    periods_map = {'day': 1, 'week': 7, 'month': 30, '3months': 90, 'year': 365,
+                   'forecast_month': 30, 'forecast_3months': 90, 'forecast_year': 365}
     days = periods_map.get(period_key, 7)
+    show_forecast = is_forecast_period
 
     start_date = timezone.now() - timedelta(days=days)
     queryset = GlucoStats.objects.filter(
@@ -237,6 +240,15 @@ def main_patient_page(request):
         chart_history_json = json.dumps(analysis['history'])
         chart_events_json = json.dumps(analysis['events'])
 
+    forecast_json = "[]"
+    recommendations = []
+
+    if show_forecast:
+        forecast_results = get_forecast_and_recommendations(request.user, queryset, period_days=days)
+        if forecast_results:
+            forecast_json = json.dumps(forecast_results['points'])
+            recommendations = forecast_results['recommendations']
+
     context = {
         "user": request.user,
         "current_level": current_level,
@@ -245,6 +257,9 @@ def main_patient_page(request):
         # Дані для графіків
         "history_data": chart_history_json,
         "events_data": chart_events_json,
+        "show_forecast": show_forecast,
+        "forecast_data": forecast_json,
+        "recommendations": recommendations,
         **forms_dict,
         **stats_context #розпаковка статитстики
     }
