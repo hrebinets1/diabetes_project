@@ -1,4 +1,6 @@
 import json
+import joblib
+
 from django.shortcuts import render
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib import messages
@@ -134,11 +136,60 @@ def main_medic_page(request):
     if not request.user.is_authenticated or not is_medic(request.user):
         return redirect('/auth_medic')
 
-    patients = User.objects.filter(medic=request.user.username, role="patient")
+    patients_list = User.objects.filter(medic=request.user.username, role="patient")
+
+    patients_data_for_template = []
+
+    for patient in patients_list:
+        #класифікація за останнім введеним показником
+        last_record = GlucoStats.objects.filter(user=patient).order_by('-measurement_date').first()
+        #значення за замовчуванням
+        classification_status = "Немає даних"
+        hba1c_val = "-"
+        CONTEXT_DISPLAY = {
+            'normal': 'Натщесерце',
+            'post_meal': 'Після їжі',
+            'post_meds': 'Після ліків',
+            'post_exercise': 'Після активності'
+        }
+
+        if last_record:
+            current_level = float(last_record.level)
+            hba1c_val = round((current_level + 2.59) / 1.59, 1)
+            #перетворення даних з БД для класифікації
+            context_map = {'normal': 0, 'post_meal': 1, 'post_meds': 2, 'post_exercise': 3}
+            ctx_code = context_map.get(last_record.context.lower())
+
+            type_map = {'type1': 1, 'type2': 2}
+            type_code = type_map.get(getattr(patient, 'diabetes').lower())
+            #Класифікація пацієнта з використанням scikit-learn
+            model_features = [[current_level, hba1c_val, ctx_code, type_code]]
+            loaded_model = joblib.load(
+                open("diabetes/clf_model.pkl", 'rb')
+            )
+            classification_status = loaded_model.predict(model_features)[0]
+
+        database_context = last_record.context if last_record else "—"
+
+        if database_context in CONTEXT_DISPLAY:
+            current_context = CONTEXT_DISPLAY[database_context]
+        else:
+            current_context = '-'
+
+        diabetes_type = getattr(patient, 'diabetes')
+        patients_data_for_template.append({
+            'profile': patient,
+            'last_glucose': last_record.level if last_record else "—",
+            'hba1c': hba1c_val,
+            'classification_status': classification_status,
+            'last_update': last_record.measurement_date if last_record else None,
+            'context_display': current_context,
+            'diabetes_type': diabetes_type
+        })
+
     data = {
         "user": request.user,
-        'patients': patients,
-        "classification": classification_method(patients_dataset=""),
+        "patients": patients_data_for_template,
     }
 
     return render(request, "main_medic_page.html", context=data)
@@ -226,7 +277,7 @@ def main_patient_page(request):
         status_info = calculate_current_status(
             level=current_level,
             context=last_record.context,
-            diabetes_type=getattr(request.user, 'diabetes_type', 'type1')
+            diabetes_type=getattr(request.user, 'diabetes', 'type1')
         )
 
     analysis = analyze_glucose_data(request.user, queryset, period_days=days)

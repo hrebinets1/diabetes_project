@@ -1,10 +1,22 @@
-from sklearn.datasets import load_iris
+"""diabetes_dataset формат файлу:
+Glucose_Level - рівень глюкози
+HbA1c - гемоглобін
+Measurement_Context - контекст заміру (0 - звичайний стан; 1 - після їжі; 2 - після ліків; 3 - після активності)
+Diabetes_Type - тип діабету (1 чи 2)
+Outcome - кінцевий 'діагноз'
+"""
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+import os
+from django.conf import settings
+import joblib
 
-# поки немає даних. використовую iris dataset
-def classification_method(patients_dataset):
-    iris = load_iris()
-    df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
-    df.columns = [c.replace(' (cm)', '').replace(' ', '_') for c in df.columns]
-    df['species'] = [iris.target_names[i] for i in iris.target]
-    return df.to_dict(orient='records')
+def classification_method(predict_data=None):
+    df = pd.read_csv(os.path.join(settings.BASE_DIR, 'data', 'diabetes_dataset.csv'))
+    X = df.drop(columns=['Outcome'])
+    y = df['Outcome']
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    filename="diabetes/clf_model.pkl"
+    joblib.dump(model, open(filename, "wb"))
+    print("Success")

@@ -1,62 +1,61 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Сторінка для медика</title>
+    <title>Головна сторінка лікаря</title>
+    <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'diabetes/css/dashboard.css' %}">
+    <style>
+        table { width: 85%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    </style>
 </head>
 <body>
-    <a href="{% url 'logout' %}"><button>Вийти з акаунту</button></a>
-    <h1>Вітаємо, {{ user.first_name }} {{ user.last_name }}!</h1>
-    <h2>Ваша лікарня: {{ user.hospital }}</h2>
-    <h2>Ваша посада: {{ user.position }}</h2>
+    <div class="header-container">
+        <div>
+            <h1>Вітаємо, {{ user.first_name }}!</h1>
+            <small>Лікарня: {{ user.hospital }} |  Посада: {{ user.position }}</small>
+        </div>
+        <div>
+            <span>{{user.username}}</span>
+            <a href="{% url 'logout' %}" class="button" style="padding: 10px 20px; min-width: auto;">Вийти</a>
+        </div>
+    </div>
+    <hr>
 
     {% if patients %}
-    <h2>Ваші пацієнти: </h2>
+    <h2>Аналіз стану пацієнтів (на основі останнього заміру)</h2>
     <table>
         <thead>
             <tr>
-                <th>Логін</th>
-                <th>Ім'я та прізвище</th>
-                <th>Email</th>
+                <th>Пацієнт</th>
+                <th>Рівень глюкози (ммоль/л)</th>
+                <th>HbA1c</th>
+                <th>Контекст</th>
+                <th>Тип діабету</th>
+                <th>Статус</th>
             </tr>
         </thead>
         <tbody>
-        {% for patient in patients %}
+        {% for item in patients %}
             <tr>
-                <td>{{ patient.username }}</td>
-                <td>{{ patient.first_name }} {{ patient.last_name }}</td>
-                <td>{{ patient.email }}</td>
+                <td>
+                    {{ item.profile.first_name }} {{ item.profile.last_name }}<br>
+                    {{ item.profile.email }}
+                </td>
+                <td>{{ item.last_glucose }}</td>
+                <td>{{ item.hba1c }}%</td>
+                <td>{{ item.context_display }}</td>
+                <td>{{ item.diabetes_type|cut:"type" }}</td>
+                <td>{{ item.classification_status }}</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <p>На даний момент за Вами не закріплено пацієнтів.</p>
+    <p>На даний момент за Вами не закріплено пацієнтів для аналізу.</p>
     {% endif %}
-    <div>
-        <h2>Аналіз пацієнтів</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Sepal Length</th>
-                    <th>Sepal Width</th>
-                    <th>Petal Length</th>
-                    <th>Petal Width</th>
-                    <th>Species</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in classification %}
-                <tr>
-                    <td>{{ item.sepal_length }}</td>
-                    <td>{{ item.sepal_width }}</td>
-                    <td>{{ item.petal_length }}</td>
-                    <td>{{ item.petal_width }}</td>
-                    <td><strong>{{ item.species }}</strong></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+
 </body>
 </html>
