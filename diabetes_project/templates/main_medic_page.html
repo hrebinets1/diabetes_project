@@ -6,56 +6,135 @@
     <title>Головна сторінка лікаря</title>
     <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
     <link rel="stylesheet" href="{% static 'diabetes/css/dashboard.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <style>
-        table { width: 85%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        table { width: 95%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; vertical-align: middle; }
+        .chart-container { height: 150px; width: 350px; position: relative; }
     </style>
 </head>
 <body>
     <div class="header-container">
         <div>
             <h1>Вітаємо, {{ user.first_name }}!</h1>
-            <small>Лікарня: {{ user.hospital }} |  Посада: {{ user.position }}</small>
+            <small>Лікарня: {{ user.hospital }} | Посада: {{ user.position }}</small>
         </div>
         <div>
-            <span>{{user.username}}</span>
+            <span>{{ user.username }}</span>
             <a href="{% url 'logout' %}" class="button" style="padding: 10px 20px; min-width: auto;">Вийти</a>
         </div>
     </div>
     <hr>
 
     {% if patients %}
-    <h2>Аналіз стану пацієнтів (на основі останнього заміру)</h2>
+    <h2>Аналіз стану пацієнтів</h2>
+    <div class="chart-controls" style="text-align: left; margin-bottom: 0;">
+        <span>Період: </span>
+        <a href="?period=day" class="{% if period == 'day' %}active{% endif %}">День</a>
+        <a href="?period=week" class="{% if period == 'week' %}active{% endif %}">Тиждень</a>
+        <a href="?period=month" class="{% if period == 'month' %}active{% endif %}">Місяць</a>
+        <a href="?period=3months" class="{% if period == '3months' %}active{% endif %}">3 Місяці</a>
+        <a href="?period=year" class="{% if period == 'year' %}active{% endif %}">Рік</a>
+    </div>
+
     <table>
         <thead>
             <tr>
                 <th>Пацієнт</th>
-                <th>Рівень глюкози (ммоль/л)</th>
+                <th>Глюкоза (ммоль/л)</th>
                 <th>HbA1c</th>
                 <th>Контекст</th>
                 <th>Тип діабету</th>
-                <th>Статус</th>
+                <th>Статус*</th>
+                <th style="width: 350px;">Динаміка</th>
             </tr>
         </thead>
         <tbody>
         {% for item in patients %}
             <tr>
                 <td>
-                    {{ item.profile.first_name }} {{ item.profile.last_name }}<br>
-                    {{ item.profile.email }}
+                    <strong>{{ item.profile.first_name }} {{ item.profile.last_name }}</strong><br>
+                    <small>{{ item.profile.email }}</small>
                 </td>
                 <td>{{ item.last_glucose }}</td>
                 <td>{{ item.hba1c }}%</td>
                 <td>{{ item.context_display }}</td>
                 <td>{{ item.diabetes_type|cut:"type" }}</td>
                 <td>{{ item.classification_status }}</td>
+                <td>
+                    <div class="chart-container">
+                        {% if item.history_json != "[]" %}
+                            <canvas id="chart-{{ item.profile.pk }}"></canvas>
+                        {% else %}
+                            <span>Нема даних для графіка.</span>
+                        {% endif %}
+                    </div>
+                </td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
+    <p><small>* статус визначено на основі класифікатора з використанням scikit-learn</small></p>
     {% else %}
     <p>На даний момент за Вами не закріплено пацієнтів для аналізу.</p>
     {% endif %}
 
+
+
+    <script>
+        {% for item in patients %}
+            (function() {
+                const historyData = JSON.parse('{{ item.history_json|default:"[]"|escapejs }}');
+                const canvas = document.getElementById('chart-{{ item.profile.pk }}');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+
+                const gradient = ctx.createLinearGradient(0, 0, 0, 150);
+                gradient.addColorStop(0.4, 'rgba(255, 100, 100, 0.4)');
+                gradient.addColorStop(0.7, 'rgba(50, 200, 250, 0.4)');
+                gradient.addColorStop(1, 'rgba(255, 200, 70, 0.4)');
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            {
+                                label: 'Цукор',
+                                data: historyData,
+                                backgroundColor: gradient,
+                                borderColor: '#3498db',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 0,
+                                parsing: { xAxisKey: 'x', yAxisKey: 'y' }
+                            },
+
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                display: false
+                            },
+                            y: {
+                                beginAtZero: false,
+                                suggestedMin: 3,
+                                suggestedMax: 14
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: true }
+                        }
+                    }
+                });
+            })();
+        {% endfor %}
+    </script>
 </body>
 </html>

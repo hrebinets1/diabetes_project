@@ -10,7 +10,6 @@ from datetime import timedelta
 from .analysis import analyze_glucose_data, calculate_current_status, get_forecast_and_recommendations
 from .forms import *
 from django.shortcuts import redirect
-from .analysis_medic import classification_method
 from .utils import generate_cgm_data
 
 
@@ -139,6 +138,11 @@ def main_medic_page(request):
     patients_list = User.objects.filter(medic=request.user.username, role="patient")
 
     patients_data_for_template = []
+    period_key = request.GET.get('period', 'week')
+    periods_map = {'day': 1, 'week': 7, 'month': 30, '3months': 90, 'year': 365,
+                   'forecast_month': 30, 'forecast_3months': 90, 'forecast_year': 365}
+    days = periods_map.get(period_key, 7)
+    start_date = timezone.now() - timedelta(days=days)
 
     for patient in patients_list:
         #класифікація за останнім введеним показником
@@ -146,6 +150,18 @@ def main_medic_page(request):
         #значення за замовчуванням
         classification_status = "Немає даних"
         hba1c_val = "-"
+
+        queryset = GlucoStats.objects.filter(
+            user=patient,
+            measurement_date__gte=start_date
+        ).order_by('measurement_date')
+        analysis = analyze_glucose_data(patient, queryset, period_days=days)
+        chart_history_json = "[]"
+        chart_events_json = "[]"
+        if analysis:
+            chart_history_json = json.dumps(analysis['history'])
+            chart_events_json = json.dumps(analysis['events'])
+
         CONTEXT_DISPLAY = {
             'normal': 'Натщесерце',
             'post_meal': 'Після їжі',
@@ -184,12 +200,15 @@ def main_medic_page(request):
             'classification_status': classification_status,
             'last_update': last_record.measurement_date if last_record else None,
             'context_display': current_context,
-            'diabetes_type': diabetes_type
+            'diabetes_type': diabetes_type,
+            'history_json': chart_history_json,
+            'events_json': chart_events_json,
         })
 
     data = {
         "user": request.user,
         "patients": patients_data_for_template,
+        "period": period_key,
     }
 
     return render(request, "main_medic_page.html", context=data)
