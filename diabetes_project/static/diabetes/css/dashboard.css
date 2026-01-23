@@ -1,0 +1,185 @@
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 3fr; /* Ліва колонка менша, права ширша */
+    gap: 20px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+}
+
+
+.stats-panel {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+.metrics-card {
+    background: #FFFFFF;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    flex: 1;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.metrics-card h4 {
+    margin: 0 0 10px;
+    color: #7f8c8d;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.big-number {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #2c4e50;
+}
+
+/* Секція графіка */
+.chart-wrapper {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    min-height: 450px;
+}
+
+.chart-controls {
+    text-align: right;
+    margin-bottom: 15px;
+}
+
+.chart-controls a {
+    text-decoration: none;
+    padding: 8px 16px;
+    border: 1px solid #3498db;
+    color: #3498db;
+    border-radius: 20px;
+    font-size: 0.9em;
+    margin-left: 5px;
+    transition: all 0.3s;
+}
+
+.chart-controls a.active,
+.chart-controls a:hover {
+    background-color: #3498db;
+    color: white;
+}
+
+
+.input-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+}
+
+
+/*Вкладки форм подій*/
+
+.tabs {
+    display: flex;
+    border-bottom: 2px solid #F0F0F0;
+    margin-bottom: 15px;
+}
+.tab-btn {
+    flex: 1;
+    padding: 10px 5px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: gray;
+    font-size: 0.9em;
+    transition: 0.3s;
+}
+
+.tab-btn:hover {
+    background-color: #F7f9f9;
+    color: #2c3e50;
+}
+
+.tab-btn.active {
+    color: #3888db;
+    border-bottom: 2px solid #3888db;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeEffect 0.5s;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeEffect {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+
+.form-control {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+label {
+    display: block;
+    margin-bottom: 3px;
+    font-weight: bold;
+    font-size: 0.85em;
+}
+p {
+    margin-bottom: 5px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.status-message {
+    font-size: 0.8em;
+    color: gray;
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.recommendations-box {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    border-left: 4px solid #3498db;
+}
+

@@ -1,16 +1,292 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Patient page</title>
+    <title>Patient Dashboard</title>
     <link rel="stylesheet" href="{% static 'diabetes/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'diabetes/css/dashboard.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@3.6.0/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
-<body>
-    <span>{{user.username}}</span><a href="{% url 'logout' %}"><button>Вийти з акаунту</button></a>
-    <h1>Вітаємо, {{ user.first_name }} {{ user.last_name }}!</h1>
-    <h2>Ваша лікарня: {{ user.hospital }}</h2>
-    <h2>Ваш лікар: {{ user.medic }}</h2>
 
+<body>
+    <div class="header-container">
+        <div>
+            <h1>Вітаємо, {{ user.first_name }}!</h1>
+            <small>Лікарня: {{ user.hospital }} | Лікар: {{ user.medic }}</small>
+        </div>
+        <div>
+            <span>{{user.username}}</span>
+            <a href="{% url 'logout' %}" class="button" style="padding: 10px 20px; min-width: auto;">Вийти</a>
+        </div>
+    </div>
+
+<!--    {% if messages %}-->
+<!--    <div class="header-container">-->
+<!--        <div class="for-messages">-->
+<!--            <ul>-->
+<!--                {% for message in messages %}-->
+<!--                <li>{{ message }}</li>-->
+<!--                {% endfor %}-->
+<!--            </ul>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    {% endif %}-->
+
+    <div class="dashboard-grid">
+
+        <div class="left-col">
+            <div class="metrics-card" style="margin-bottom: 20px; border-left: 5px solid {{ status_info.color }}">
+                <h4>Поточний рівень</h4>
+                <div class="big-number" style="color: {{ status_info.color }};">
+                    {{ current_level }}
+                </div>
+                <small>mmol/L</small>
+                <div style="margin-top: 10px;">
+                    <span class="status-badge" style="background-color: {{ status_info.bg_color }}; color: {{ status_info.color }};">
+                        {{ status_info.status }}
+                    </span>
+
+                    <p class="status-message">
+                        {{ status_info.message }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="input-section">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="openTab(event, 'tab-gluco')">Цукор</button>
+                    <button class="tab-btn" onclick="openTab(event, 'tab-meal')">Їжа</button>
+                    <button class="tab-btn" onclick="openTab(event, 'tab-meds')">Ліки</button>
+                    <button class="tab-btn" onclick="openTab(event, 'tab-act')">Спорт</button>
+                </div>
+
+                <div id="tab-gluco" class="tab-content active">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ gluco_form.as_p }}
+                        <button type="submit" name="submit_gluco" class="button" style="width: 100%;">Записати</button>
+                    </form>
+                </div>
+
+                <div id="tab-meal" class="tab-content">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ meal_form.as_p }}
+                        <button type="submit" name="submit_meal" class="button" style="width: 100%; background-color: #04AA6D;">Додати їжу</button>
+                    </form>
+                </div>
+
+                <div id="tab-meds" class="tab-content">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ meds_form.as_p }}
+                        <button type="submit" name="submit_meds" class="button" style="width: 100%; background-color: #e67e22;">Додати ліки</button>
+                    </form>
+                </div>
+
+                <div id="tab-act" class="tab-content">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ activity_form.as_p }}
+                        <button type="submit" name="submit_act" class="button" style="width: 100%; background-color: #3888db;">Додати спорт</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <div class="stats-panel">
+                <div class="metrics-card">
+                    <h4>Середній</h4>
+                    <div class="big-number">{{ avg|default:"-" }}</div>
+                </div>
+                <div class="metrics-card">
+                    <h4>Мін</h4>
+                    <div class="big-number">{{ min|default:"-" }}</div>
+                </div>
+                <div class="metrics-card">
+                    <h4>Макс</h4>
+                    <div class="big-number">{{ max|default:"-" }}</div>
+                </div>
+                <div class="metrics-card">
+                    <h4>HbA1c</h4>
+                    <div class="big-number">{{ hba1c|default:"-" }}%</div>
+                </div>
+            </div>
+
+            <div class="chart-wrapper">
+               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+
+                    <div class="chart-controls" style="text-align: left; margin-bottom: 0;">
+                        <span>Період: </span>
+                        <a href="?period=day" class="{% if period == 'day' %}active{% endif %}">День</a>
+                        <a href="?period=week" class="{% if period == 'week' %}active{% endif %}">Тиждень</a>
+                        <a href="?period=month" class="{% if period == 'month' %}active{% endif %}">Місяць</a>
+                        <a href="?period=3months" class="{% if period == '3months' %}active{% endif %}">3 Місяці</a>
+                        <a href="?period=year" class="{% if period == 'year' %}active{% endif %}">Рік</a>
+                    </div>
+
+                    <div class="chart-controls" style="margin-bottom: 0;">
+                        <span style="font-weight: bold; color: #3498db;">ПРОГНОЗ: </span>
+                        <select onchange="location = this.value;" style="padding: 6px 12px; border-radius: 20px; border: 1px solid #3498db; color: #3498db; background: white; outline: none; cursor: pointer;">
+                            <option value="#" {% if not show_forecast %}selected{% endif %} disabled>Оберіть період...</option>
+                            <option value="?period=forecast_month" {% if period == 'forecast_month' %}selected{% endif %}>На місяць</option>
+                            <option value="?period=forecast_3months" {% if period == 'forecast_3months' %}selected{% endif %}>На 3 місяці</option>
+                            <option value="?period=forecast_year" {% if period == 'forecast_year' %}selected{% endif %}>На рік</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="height: 400px; width: 100%;">
+                    <canvas id="glucoseChart"></canvas>
+                </div>
+                {% if show_forecast %}
+                <div class="recommendations-box">
+                    <h3 style="color: #2c3e50; margin-bottom: 10px;">Прогноз та рекомендації</h3>
+                    {% if recommendations %}
+                        <ul style="list-style: none; padding: 0;">
+                            {% for rec in recommendations %}
+                                <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: start;">
+                                    {{ rec }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p style="color: #7f8c8d;">Недостатньо даних для формування прогнозу. Продовжуйте вести щоденник.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+                tabcontent[i].classList.remove("active");
+            }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.className += " active";
+        }
+
+        const historyData = JSON.parse('{{ history_data|default:"[]"|escapejs }}');
+        const eventsData = JSON.parse('{{ events_data|default:"[]"|escapejs }}');
+        const forecastData = JSON.parse('{{ forecast_data|default:"[]"|escapejs }}');
+
+        const ctx = document.getElementById('glucoseChart').getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0.4, 'rgba(255, 100, 100, 0.5)'); // Високий
+        gradient.addColorStop(0.7, 'rgba(50, 200, 250, 0.5)'); // Норма
+        gradient.addColorStop(1, 'rgba(255, 200, 70, 0.5)'); // Низький
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Історія (mmol/L)',
+                        data: historyData,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: historyData.length > 50 ? 0 : 3,
+                        parsing: {
+                            xAxisKey: 'x',
+                            yAxisKey: 'y'
+                        }
+                    },
+                    {
+                        // Лінія ПРОГНОЗУ
+                        label: 'Прогноз (Тренд)',
+                        data: forecastData,
+                        borderColor: '#95a5a6',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0.3,
+                        parsing: {
+                            xAxisKey: 'x',
+                            yAxisKey: 'y' }
+                    },
+                    {
+                        type: 'scatter',
+                        label: 'Події',
+                        data: eventsData,
+                        backgroundColor: (ctx) => {
+                            const val = ctx.raw?.title || '';
+                            if (val.includes('meal')) return '#27ae60';
+                            if (val.includes('med')) return '#e67e22';
+                            return '#8e44ad'; // Фіолетовий
+                        },
+                        pointStyle: (ctx) => {
+                            const val = ctx.raw?.title || '';
+                            if (val.includes('meal')) return 'rectRot'; // Ромб
+                            if (val.includes('med')) return 'triangle'; // Трикутник
+                            return 'circle';
+                        },
+                        pointRadius: 8,
+                        pointHoverRadius: 10,
+                        parsing: { xAxisKey: 'x', yAxisKey: 'y' }
+                    }
+
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: '{{ period }}' === 'year' ? 'month' : 'day',
+                            displayFormats: { day: 'dd.MM', month: 'MMM yyyy', hour: 'HH:mm' },
+                            tooltipFormat: 'dd.MM.yyyy HH:mm'
+                        },
+                        title: { display: true, text: 'Час' }
+                    },
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: 3,
+                        suggestedMax: 15
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.type === 'scatter') {
+                                    const raw = context.raw;
+                                    let cleanTitle = raw.title.replace('meal ', '').replace('med ', '').replace('act ', '');
+                                    return [`${cleanTitle}`, raw.desc];
+                                }
+                                return `Цукор: ${context.parsed.y} mmol/L`;
+                            }
+                        }
+                    },
+                    legend: {
+                        labels: {
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+    </script>
 </body>
 </html>
