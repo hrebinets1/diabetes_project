@@ -12,6 +12,6 @@ X = df.drop(columns=['Outcome'])
 y = df['Outcome']
 model = RandomForestClassifier(n_estimators=100, random_state=42)
 model.fit(X, y)
-filename = "clf_model.pkl"
+filename = "clf_model.joblib"
 joblib.dump(model, open(filename, "wb"))
 print("Success")

@@ -181,7 +181,7 @@ def main_medic_page(request):
             #Класифікація пацієнта з використанням scikit-learn
             model_features = [[current_level, hba1c_val, ctx_code, type_code]]
             loaded_model = joblib.load(
-                open("diabetes/clf_model.pkl", 'rb')
+                open("diabetes/clf_model.joblib", 'rb')
             )
             classification_status = loaded_model.predict(model_features)[0]
 
