@@ -11,12 +11,12 @@ import os
 from django.conf import settings
 import joblib
 
-def classification_method(predict_data=None):
+def classification_method():
     df = pd.read_csv(os.path.join(settings.BASE_DIR, 'data', 'diabetes_dataset.csv'))
     X = df.drop(columns=['Outcome'])
     y = df['Outcome']
     model = RandomForestClassifier(n_estimators=100, random_state=42)
     model.fit(X, y)
-    filename="diabetes/clf_model.pkl"
+    filename="diabetes/clf_model.joblib"
     joblib.dump(model, open(filename, "wb"))
     print("Success")
