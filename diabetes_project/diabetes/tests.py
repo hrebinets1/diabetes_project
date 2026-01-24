@@ -215,4 +215,29 @@ class PatientTests(TestCase):
         # чи записалось в БД
         self.assertTrue(GlucoStats.objects.filter(user=self.patient, level=7.3).exists())
 
+    def test_post_invalid_gluco_stats(self):
+        self.client.login(username='testpat', password='123_456')
+
+        data = {
+            'submit_gluco': '',
+            'gluco-level': 'many', #текст замість числа
+            'gluco-measurement_date': '2026-01-24T13:00',
+            'gluco-context': 'post_meal'
+        }
+        response = self.client.post(reverse('main_patient_page'), data)
+        self.assertEqual(response.status_code, 200)
+        # чи не портапило сміття в БД
+        self.assertFalse(GlucoStats.objects.filter(user=self.patient, level=7.3).exists())
+
+    def test_main_page_empty_message(self):
+
+        self.client.login(username='testpat', password='123_456')
+        response = self.client.get(reverse('main_patient_page'))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(response.context['current_level'], 0)
+
+        self.assertContains(response, "Додайте вимірювання")
+        self.assertContains(response, "Немає даних")
+
 
