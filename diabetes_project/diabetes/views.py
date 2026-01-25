@@ -38,7 +38,10 @@ def is_patient(user):
 def auth_medic(request):
     clear_messages(request)
     if request.user.is_authenticated:
-        return redirect("/main_medic_page")
+        if is_medic(request.user):
+            return redirect('/main_medic_page')
+        elif is_patient(request.user):
+            return redirect('/main_patient_page')
 
     if request.method == "POST":
         form = AuthMedicForm(request.POST)
@@ -62,7 +65,10 @@ def auth_medic(request):
 def auth_patient(request):
     clear_messages(request)
     if request.user.is_authenticated:
-        return redirect("/main_patient_page")
+        if is_patient(request.user):
+            return redirect('/main_patient_page')
+        elif is_medic(request.user):
+            return redirect('/main_medic_page')
 
     if request.method == "POST":
         form = AuthPatientForm(request.POST)
@@ -132,8 +138,10 @@ def main_page(request):
     return render(request, "main_page.html")
 
 def main_medic_page(request):
-    if not request.user.is_authenticated or not is_medic(request.user):
+    if not request.user.is_authenticated:
         return redirect('/auth_medic')
+    if not is_medic(request.user):
+        return redirect('/main_patient_page')
 
     patients_list = User.objects.filter(medic=request.user.username, role="patient")
 
@@ -216,8 +224,10 @@ def main_medic_page(request):
 
 def main_patient_page(request):
     clear_messages(request)
-    if not request.user.is_authenticated or not is_patient(request.user):
+    if not request.user.is_authenticated:
         return redirect('/auth_patient')
+    if not is_patient(request.user):
+        return redirect('/main_medic_page')
 
     forms_dict = {
         'gluco_form': GlucoStatsForm(prefix='gluco'),
