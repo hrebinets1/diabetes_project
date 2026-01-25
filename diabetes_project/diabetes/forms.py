@@ -36,13 +36,14 @@ class RegisterPatientForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'diabetes', 'medic','hospital')
+        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'diabetes', 'medic','hospital', 'device_id')
         labels = {
             'first_name': "Ваше ім'я",
             'last_name': "Ваше прізвище",
             'diabetes': "Тип діабету",
             'medic': "Лікар",
-            'hospital': "Лікарня"
+            'hospital': "Лікарня",
+            'device_id': "Номер CGM пристрою"
         }
         widgets = {
             'password': forms.PasswordInput()

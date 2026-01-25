@@ -16,7 +16,7 @@ class CustomUser(AbstractUser):
     diabetes = models.CharField(max_length=20, choices=TYPE_CHOICES, default='type1')
     role = models.CharField(max_length=10, null=False,
                             choices = [('medic', 'Medic'), ('patient', 'Patient')], default='medic')
-
+    device_id = models.CharField(max_length=20, blank=True)
 
 class GlucoStats(models.Model):
 
