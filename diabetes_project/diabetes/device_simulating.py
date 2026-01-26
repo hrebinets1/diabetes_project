@@ -15,6 +15,7 @@ BROKER_HOST = "localhost"
 BROKER_PORT = 1884
 TOPIC = "devices/glucose"
 DEVICE_ID = "7877"
+SUB_TOPIC=f"devices/{DEVICE_ID}/commands"
 
 client = mqtt.Client()
 
@@ -24,6 +25,34 @@ except Exception as e:
     print(f"Не вдалося підключитися до {BROKER_HOST}:{BROKER_PORT}.")
     exit()
 
+def on_connect(client, userdata, flags, rc):
+    client.subscribe(SUB_TOPIC)
+    print(f"Пристрій підключено! Слухаю команди в: {SUB_TOPIC}")
+
+
+def on_message(client, userdata, msg):
+    try:
+        command_data = json.loads(msg.payload.decode())
+        print(f"Отримано команду: {command_data}")
+
+        if command_data.get("action") == "measure_now":
+            send_measurement(client)
+        else:
+            print("Невідома команда")
+
+    except Exception as e:
+        print(f"Помилка обробки команди: {e}")
+
+
+def send_measurement(client):
+    current_level = next(generator)
+    payload = {
+        "device_id": DEVICE_ID,
+        "level": current_level,
+        "timestamp": datetime.now().isoformat(),
+    }
+    client.publish(TOPIC, json.dumps(payload), qos=1)
+    print(f"EXtra sent: {current_level} -> Port {BROKER_PORT}")
 
 def generate_glucose():
     level = 4.8
@@ -40,22 +69,38 @@ def generate_glucose():
         yield round(level, 1)
 
 
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
 generator = generate_glucose()
 
-print(f"device_id: {DEVICE_ID}")
-print("Start! (Ctrl+C для зупинки)")
+try:
+    client.connect(BROKER_HOST, BROKER_PORT, 60)
+except Exception as e:
+    print(f"Не вдалося підключитися.")
+    exit()
 
-while True:
+# фоновий потік для прослуховування команд
+client.loop_start()
 
-    current_level = next(generator)
+print(f"Пристрій {DEVICE_ID} працює. (Ctrl+C для зупинки)")
 
-    payload = {
-        "device_id": DEVICE_ID,
-        "level": current_level,
-        "timestamp": datetime.now().isoformat(),
-    }
+try:
+    while True:
+        current_level = next(generator)
 
-    client.publish(TOPIC, json.dumps(payload), qos=1)
-    print(f"Sent: {current_level} -> Port {BROKER_PORT}")
+        payload = {
+            "device_id": DEVICE_ID,
+            "level": current_level,
+            "timestamp": datetime.now().isoformat(),
+        }
 
-    time.sleep(5)
+        client.publish(TOPIC, json.dumps(payload), qos=1)
+        print(f"Sent: {current_level} -> Port {BROKER_PORT}")
+
+        time.sleep(30)
+
+except KeyboardInterrupt:
+    print("Зупинка.")
+    client.loop_stop()
+    client.disconnect()
