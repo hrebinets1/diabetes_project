@@ -144,3 +144,8 @@ MIGRATION_MODULES = {
     'auth': 'mongo_migrations.auth',
     'contenttypes': 'mongo_migrations.contenttypes',
 }
+
+#MQTT SETTINGS
+
+BROKER_HOST = "localhost"
+BROKER_PORT = 1884

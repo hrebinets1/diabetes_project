@@ -11,7 +11,8 @@ from .analysis import analyze_glucose_data, calculate_current_status, get_foreca
 from .forms import *
 from django.shortcuts import redirect
 from .utils import generate_cgm_data
-
+from django.conf import settings
+import paho.mqtt.client as mqtt
 
 User = get_user_model()
 
@@ -138,6 +139,7 @@ def main_page(request):
     return render(request, "main_page.html")
 
 def main_medic_page(request):
+    clear_messages(request)
     if not request.user.is_authenticated:
         return redirect('/auth_medic')
     if not is_medic(request.user):
@@ -151,6 +153,20 @@ def main_medic_page(request):
                    'forecast_month': 30, 'forecast_3months': 90, 'forecast_year': 365}
     days = periods_map.get(period_key, 7)
     start_date = timezone.now() - timedelta(days=days)
+    loaded_model = joblib.load(
+        open("diabetes/clf_model.joblib", 'rb')
+    )
+
+    if request.method == "POST" and "trigger_device_id" in request.POST:
+        device_id = request.POST.get("trigger_device_id")
+        status_code, error_detail = trigger_measurement(device_id)
+
+        if status_code == "0":
+            messages.success(request, f"Запит успішно надіслано на пристрій №{device_id}")
+        else:
+            messages.error(request, f"Виникла помилка: {error_detail}")
+
+        return redirect(request.path_info)
 
     for patient in patients_list:
         #класифікація за останнім введеним показником
@@ -188,9 +204,7 @@ def main_medic_page(request):
             type_code = type_map.get(getattr(patient, 'diabetes').lower())
             #Класифікація пацієнта з використанням scikit-learn
             model_features = [[current_level, hba1c_val, ctx_code, type_code]]
-            loaded_model = joblib.load(
-                open("diabetes/clf_model.joblib", 'rb')
-            )
+
             classification_status = loaded_model.predict(model_features)[0]
 
         database_context = last_record.context if last_record else "—"
@@ -201,6 +215,8 @@ def main_medic_page(request):
             current_context = '-'
 
         diabetes_type = getattr(patient, 'diabetes')
+        device_id = getattr(patient, 'device_id')
+
         patients_data_for_template.append({
             'profile': patient,
             'last_glucose': last_record.level if last_record else "—",
@@ -211,6 +227,7 @@ def main_medic_page(request):
             'diabetes_type': diabetes_type,
             'history_json': chart_history_json,
             'events_json': chart_events_json,
+            'device_id': device_id
         })
 
     data = {
@@ -221,6 +238,28 @@ def main_medic_page(request):
 
     return render(request, "main_medic_page.html", context=data)
 
+def trigger_measurement(device_ID):
+    client = mqtt.Client()
+    command_topic = f"devices/{device_ID}/commands"
+
+    try:
+        client.connect(settings.BROKER_HOST, settings.BROKER_PORT)
+
+        client.loop_start()
+
+        command = {"action": "measure_now"}
+        info = client.publish(command_topic, json.dumps(command), qos=1)
+        info.wait_for_publish(timeout=3)
+
+        if info.is_published():
+            return "0", "Успішно"
+        else:
+            return "1", "Запит не надійшов. Спробуйте знову"
+    except Exception as e:
+        return "2", "Виникла помилка під час надсилання запиту"
+    finally:
+        client.loop_stop()
+        client.disconnect()
 
 def main_patient_page(request):
     clear_messages(request)
