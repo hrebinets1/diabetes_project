@@ -14,7 +14,7 @@ from datetime import datetime
 BROKER_HOST = "localhost"
 BROKER_PORT = 1884
 TOPIC = "devices/glucose"
-DEVICE_ID = "7877"
+DEVICE_ID = "7888"
 SUB_TOPIC=f"devices/{DEVICE_ID}/commands"
 
 client = mqtt.Client()
@@ -26,7 +26,7 @@ except Exception as e:
     exit()
 
 def on_connect(client, userdata, flags, rc):
-    client.subscribe(SUB_TOPIC)
+    client.subscribe(SUB_TOPIC, qos=1)
     print(f"Пристрій підключено! Слухаю команди в: {SUB_TOPIC}")
 
 
@@ -68,11 +68,10 @@ def generate_glucose():
 
         yield round(level, 1)
 
-
-client = mqtt.Client()
+generator = generate_glucose()
+client = mqtt.Client(client_id= f"{DEVICE_ID}",clean_session=False)
 client.on_connect = on_connect
 client.on_message = on_message
-generator = generate_glucose()
 
 try:
     client.connect(BROKER_HOST, BROKER_PORT, 60)
@@ -88,17 +87,15 @@ print(f"Пристрій {DEVICE_ID} працює. (Ctrl+C для зупинки
 try:
     while True:
         current_level = next(generator)
-
         payload = {
             "device_id": DEVICE_ID,
             "level": current_level,
             "timestamp": datetime.now().isoformat(),
         }
-
         client.publish(TOPIC, json.dumps(payload), qos=1)
         print(f"Sent: {current_level} -> Port {BROKER_PORT}")
 
-        time.sleep(30)
+        time.sleep(10)
 
 except KeyboardInterrupt:
     print("Зупинка.")
